@@ -27,6 +27,7 @@ type SavePlan struct {
 	source   Revision
 	snapshot editor.Snapshot
 	path     string
+	area     string
 	bom      bool
 	expected Fingerprint
 	saveAs   bool
@@ -90,7 +91,7 @@ func (d *Document) plan(path string, expected Fingerprint, saveAs bool) (SavePla
 	if err != nil {
 		return SavePlan{}, err
 	}
-	return SavePlan{token: token, source: source, snapshot: s, path: path, bom: d.BOM, expected: expected, saveAs: saveAs}, nil
+	return SavePlan{token: token, source: source, snapshot: s, path: path, area: d.Area, bom: d.BOM, expected: expected, saveAs: saveAs}, nil
 }
 
 // CompleteSave runs on the UI thread. The baseline is the saved snapshot,
@@ -121,17 +122,30 @@ func (p SavePlan) Write(ctx context.Context) (result SaveResult, err error) {
 		err = e
 		return
 	}
-	parent, e := filepath.EvalSymlinks(filepath.Dir(absolute))
+
+	parent := filepath.Dir(absolute)
+	area := p.area
+	if p.saveAs {
+		area = parent
+	}
+	scope, e := os.OpenRoot(area)
 	if e != nil {
 		err = e
 		return
 	}
-	root, e := os.OpenRoot(parent)
+	defer scope.Close()
+	rel, e := filepath.Rel(area, parent)
+	if e != nil || !filepath.IsLocal(rel) {
+		err = errors.New("save destination is outside the authorized folder")
+		return
+	}
+	root, e := scope.OpenRoot(rel)
 	if e != nil {
 		err = e
 		return
 	}
 	defer root.Close()
+
 	name := filepath.Base(absolute)
 	if name == "." || name == string(filepath.Separator) {
 		err = errors.New("choose a file destination")

@@ -173,6 +173,19 @@ func (a *App) documentView(c *ui.Context) {
 			a.switchTab(a.tab)
 		}
 		d := a.active()
+		if disk, changed := a.external[d]; changed {
+			ui.Row(c).Padding(8, 12).Gap(8).Background(c.Theme().Surface).Children(func() {
+				label := "File changed on disk"
+				if !disk.Fingerprint.Exists {
+					label = "File deleted on disk"
+				}
+				ui.Text(c, label).Grow(1)
+				ui.Button(c, "Reload").Disabled(d.Saving()).OnClick(func() { a.requestReload(d) })
+				ui.Button(c, "Compare").OnClick(func() { a.compareDisk(d) })
+				ui.Button(c, "Save As").Disabled(d.Saving()).OnClick(func() { a.saveAs(d, nil) })
+				ui.Button(c, "Overwrite").Disabled(d.Saving()).OnClick(func() { a.requestOverwrite(d) })
+			})
+		}
 		if d.Markdown {
 			ui.Row(c).Padding(6, 12).Gap(6).Children(func() {
 				for _, m := range []struct {

@@ -9,6 +9,7 @@ import (
 
 	"github.com/egoist/mygo"
 	"github.com/egoist/mygo/ui"
+	"github.com/egoist/mygo/ui/editor"
 	"github.com/jewei/wondervision/internal/documents"
 	"github.com/jewei/wondervision/internal/preferences"
 	"github.com/jewei/wondervision/internal/workspace"
@@ -63,13 +64,25 @@ type App struct {
 	askClose      bool
 	replaceSave   *replaceSaveRequest
 	askReplace    bool
+	external      map[*documents.Document]documents.DiskVersion
+	checking      map[*documents.Document]bool
+	checkAgain    map[*documents.Document]bool
+	watchCancel   map[*documents.Document]context.CancelFunc
+	askReload     bool
+	reloadDoc     *documents.Document
+	askOverwrite  bool
+	overwriteDoc  *documents.Document
+	compareOpen   bool
+	compareDoc    *documents.Document
+	compareEditor *editor.State
 }
 
 func newApp() *App {
 	ctx, cancel := context.WithCancel(context.Background())
 	return &App{ctx: ctx, cancel: cancel, jobs: make(chan func() func(), 32),
-		prefs: preferences.State{MarkdownMode: int(documents.Preview), SidebarWidth: 220},
-		dirs:  make(map[string]*directory), row: -1, scroll: make(map[*documents.Document]*ui.ScrollState), splitPercent: 50}
+		prefs:    preferences.State{MarkdownMode: int(documents.Preview), SidebarWidth: 220},
+		external: make(map[*documents.Document]documents.DiskVersion), checking: make(map[*documents.Document]bool), checkAgain: make(map[*documents.Document]bool), watchCancel: make(map[*documents.Document]context.CancelFunc),
+		dirs: make(map[string]*directory), row: -1, scroll: make(map[*documents.Document]*ui.ScrollState), splitPercent: 50}
 }
 
 func Run() error {
@@ -386,6 +399,7 @@ func (a *App) openFile(path, area, anchor string) {
 				d.Area = a.workspace.Root
 			}
 			a.docs = append(a.docs, d)
+			a.startWatch(d)
 			a.scroll[d] = &ui.ScrollState{}
 			a.activate(len(a.docs) - 1)
 			a.setAnchor(d, anchor)

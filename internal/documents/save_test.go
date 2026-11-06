@@ -210,3 +210,31 @@ func TestSaveAsNeverOverwritesAndRejectsSymlink(t *testing.T) {
 	}
 	d.CompleteSave(result, err)
 }
+
+func TestSaveRejectsParentSymlinkEscape(t *testing.T) {
+	root, outside := t.TempDir(), t.TempDir()
+	parent := filepath.Join(root, "docs")
+	os.Mkdir(parent, 0700)
+	path := filepath.Join(parent, "note.md")
+	os.WriteFile(path, []byte("original"), 0600)
+	os.WriteFile(filepath.Join(outside, "note.md"), []byte("original"), 0600)
+	d, err := Open(context.Background(), path, root, Edit)
+	if err != nil {
+		t.Fatal(err)
+	}
+	d.Buffer.Set("mine")
+	plan, _ := d.PrepareSave()
+	os.Rename(parent, parent+"-old")
+	if err := os.Symlink(outside, parent); err != nil {
+		t.Skip(err)
+	}
+	result, err := plan.Write(context.Background())
+	if err == nil {
+		t.Fatal("save escaped through a replaced parent directory")
+	}
+	d.CompleteSave(result, err)
+	raw, _ := os.ReadFile(filepath.Join(outside, "note.md"))
+	if string(raw) != "original" {
+		t.Fatal("outside file was changed")
+	}
+}

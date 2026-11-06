@@ -18,6 +18,12 @@ func (a *App) fileMenu(m *ui.Menu) {
 	if m.Item("Save As").Shortcut(ui.Cmd|ui.Shift, ui.KeyS).Disabled(busy).Chosen() {
 		a.saveAs(d, nil)
 	}
+	if m.Item("Reload from Disk").Disabled(busy).Chosen() {
+		a.requestReload(d)
+	}
+	if m.Item("Compare Disk Version").Disabled(d == nil).Chosen() {
+		a.compareDisk(d)
+	}
 	if m.Item("Close Tab").Shortcut(ui.Cmd, ui.KeyW).Disabled(busy).Chosen() {
 		a.requestClose(d)
 	}

@@ -62,6 +62,7 @@ func (a *App) writeSave(d *documents.Document, plan documents.SavePlan, after fu
 			}
 			if err != nil {
 				a.notify(fmt.Errorf("save: %w", err))
+				a.checkDisk(d)
 				a.quitWhenSaved = false
 				a.allowQuit = false
 				return
@@ -76,6 +77,17 @@ func (a *App) writeSave(d *documents.Document, plan documents.SavePlan, after fu
 			d.Relocate(d.Path, area, result.Info)
 			if oldPath != d.Path {
 				a.releasePreview()
+			}
+			delete(a.external, d)
+			if oldPath != d.Path {
+				a.stopWatch(d)
+				delete(a.checking, d)
+				delete(a.checkAgain, d)
+				a.startWatch(d)
+			}
+			if a.checkAgain[d] {
+				delete(a.checkAgain, d)
+				a.checkDisk(d)
 			}
 			a.prefs.ActiveFile = a.activePath()
 			a.remember()
@@ -200,6 +212,10 @@ func (a *App) requestClose(d *documents.Document) {
 func (a *App) removeDocument(d *documents.Document) {
 	for i, open := range a.docs {
 		if open == d {
+			a.stopWatch(d)
+			delete(a.external, d)
+			delete(a.checking, d)
+			delete(a.checkAgain, d)
 			if a.preview != nil && a.preview.doc == d {
 				a.releasePreview()
 			}

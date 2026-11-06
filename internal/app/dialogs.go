@@ -41,4 +41,23 @@ func (a *App) editingDialogs(c *ui.Context) {
 			a.confirmReplaceSave()
 		}
 	}
+	if d := a.reloadDoc; d != nil {
+		switch ui.AlertDialog(c, &a.askReload, "Discard edits and reload?", d.Path, "Cancel", "Reload from Disk") {
+		case 0, ui.AlertDismissed:
+			a.reloadDoc = nil
+		case 1:
+			a.reloadDoc = nil
+			a.reloadDocument(d)
+		}
+	}
+	if d := a.overwriteDoc; d != nil {
+		switch ui.AlertDialog(c, &a.askOverwrite, "Overwrite disk changes?", "Replace the last observed disk version with this buffer. A newer disk change will still block the save.", "Cancel", "Overwrite Disk") {
+		case 0, ui.AlertDismissed:
+			a.overwriteDoc = nil
+		case 1:
+			a.overwriteDoc = nil
+			a.overwriteDocument(d)
+		}
+	}
+	a.showDiskComparison(c)
 }

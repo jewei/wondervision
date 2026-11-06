@@ -40,7 +40,7 @@ type App struct {
 	dialogOpen       bool
 	workspace        *workspace.Workspace
 	dirs             map[string]*directory
-	outline          ui.OutlineState[workspace.Entry]
+	outline          *ui.OutlineState[workspace.Entry]
 	row              int
 	wsCtx            context.Context
 	wsCancel         context.CancelFunc
@@ -97,7 +97,7 @@ func newApp() *App {
 		recoveryDelay: 15 * time.Second, recoveryEntries: make(map[*documents.Document]*recoveryEntry),
 		prefs:    preferences.State{MarkdownMode: int(documents.Preview), SidebarWidth: 220},
 		external: make(map[*documents.Document]documents.DiskVersion), checking: make(map[*documents.Document]bool), checkAgain: make(map[*documents.Document]bool), watchCancel: make(map[*documents.Document]context.CancelFunc),
-		dirs: make(map[string]*directory), row: -1, scroll: make(map[*documents.Document]*ui.ScrollState), splitPercent: 50}
+		outline: &ui.OutlineState[workspace.Entry]{}, dirs: make(map[string]*directory), row: -1, scroll: make(map[*documents.Document]*ui.ScrollState), splitPercent: 50}
 }
 
 func Run() error {
@@ -316,7 +316,7 @@ func (a *App) openFolder(path string) {
 				}
 			}
 			a.dirs = map[string]*directory{w.Root: {entries: entries, loaded: true}}
-			a.outline = ui.OutlineState[workspace.Entry]{}
+			a.outline = &ui.OutlineState[workspace.Entry]{}
 			a.row = -1
 			a.prefs.Workspace = w.Root
 			a.remember()

@@ -122,9 +122,10 @@ func (a *App) explorer(c *ui.Context) {
 		if len(root.entries) == 0 {
 			ui.Text(c, "Empty folder").Padding(12).TextColor(t.TextMuted)
 		}
-		a.outline.List.Selected = &a.row
-		a.outline.List.Label = func(i int) string { return a.outline.Item(i).Name }
-		tree := ui.Outline(c.Key("explorer"), &a.outline, root.entries, func(e workspace.Entry) []workspace.Entry {
+		outline := a.outline
+		outline.List.Selected = &a.row
+		outline.List.Label = func(i int) string { return outline.Item(i).Name }
+		tree := ui.Outline(c.Key("explorer"), outline, root.entries, func(e workspace.Entry) []workspace.Entry {
 			if !e.Directory || e.Symlink {
 				return nil
 			}

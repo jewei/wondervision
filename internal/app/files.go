@@ -230,7 +230,7 @@ func (a *App) refreshExplorer() {
 				return
 			}
 			a.dirs = map[string]*directory{w.Root: {entries: entries, loaded: true}}
-			a.outline = ui.OutlineState[workspace.Entry]{}
+			a.outline = &ui.OutlineState[workspace.Entry]{}
 			a.row = -1
 		}
 	})

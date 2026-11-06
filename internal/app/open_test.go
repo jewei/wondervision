@@ -48,6 +48,37 @@ func fixture(t *testing.T) string {
 	return root
 }
 
+func TestExplorerRefreshKeepsRenderedStateAliveUntilNextFrame(t *testing.T) {
+	for _, operation := range []string{"reopen", "refresh"} {
+		t.Run(operation, func(t *testing.T) {
+			a := newApp()
+			t.Cleanup(a.cancel)
+			root := fixture(t)
+			a.openFolder(root)
+			drain(t, a)
+			tt := ui.NewTester(a.view, 1040, 720)
+			previous := a.outline
+			rows, first := previous.Rows(), previous.Item(0).Name
+			label := previous.List.Label
+			if operation == "reopen" {
+				a.openFolder(root)
+			} else {
+				a.refreshExplorer()
+			}
+			drain(t, a)
+			// Native accessibility may read the last rendered frame before the
+			// next UI frame. Its retained list state and label closure must work.
+			if previous.Rows() != rows || label(0) != first {
+				t.Fatal("refresh invalidated the still-rendered Explorer state")
+			}
+			tt.Frame()
+			if a.outline.Rows() != rows || !tt.HasText(".env") {
+				t.Fatal("refreshed Explorer did not render")
+			}
+		})
+	}
+}
+
 func TestOpenViewAndLazyExplorer(t *testing.T) {
 	root := fixture(t)
 	a := newApp()

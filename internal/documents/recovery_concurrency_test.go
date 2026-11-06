@@ -74,3 +74,57 @@ func TestConcurrentSessionRecoveryWrites(t *testing.T) {
 		t.Fatal("both sessions wrote successfully to one path; one unreviewed draft was overwritten")
 	}
 }
+
+// A crash between creating and renaming a temp file leaves the temp behind.
+// List removes such files only while it holds the recovery lock: a live writer
+// keeps the lock until its temp is gone, so a temp seen without the lock may
+// belong to a write in progress. This is CleanTemps in
+// verification/recovery/Recovery.tla.
+func TestListRemovesOnlyOrphanedRecoveryTemps(t *testing.T) {
+	ctx := context.Background()
+	root := t.TempDir()
+	path := filepath.Join(root, "todo.md")
+	if err := os.WriteFile(path, []byte("original"), 0600); err != nil {
+		t.Fatal(err)
+	}
+	d, err := Open(ctx, path, root, Edit)
+	if err != nil {
+		t.Fatal(err)
+	}
+	d.Buffer.Set("unsaved draft")
+	store := NewRecoveryStore(filepath.Join(t.TempDir(), "recovery"))
+	plan, _ := d.RecoverySnapshot()
+	if err = store.Write(ctx, plan); err != nil {
+		t.Fatal(err)
+	}
+	orphan := filepath.Join(store.Dir, recoveryTempPrefix+"crashed")
+	if err = os.WriteFile(orphan, []byte("partial"), 0600); err != nil {
+		t.Fatal(err)
+	}
+
+	dir, err := os.OpenRoot(store.Dir)
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer dir.Close()
+	held, err := recoveryLock(ctx, dir)
+	if err != nil {
+		t.Fatal(err)
+	}
+	records, err := NewRecoveryStore(store.Dir).List(ctx)
+	if err != nil || len(records) != 1 {
+		t.Fatalf("list while busy: %v %v", records, err)
+	}
+	if _, err = os.Stat(orphan); err != nil {
+		t.Fatalf("List removed a temp file while another session held the lock: %v", err)
+	}
+	held.Close()
+
+	records, err = NewRecoveryStore(store.Dir).List(ctx)
+	if err != nil || len(records) != 1 {
+		t.Fatalf("list: %v %v", records, err)
+	}
+	if _, err = os.Stat(orphan); !errors.Is(err, os.ErrNotExist) {
+		t.Fatalf("List kept an orphaned temp file: %v", err)
+	}
+}

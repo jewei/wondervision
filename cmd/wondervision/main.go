@@ -4,12 +4,12 @@ import (
 	"fmt"
 	"os"
 
-	"folio/internal/app"
+	"github.com/jewei/wondervision/internal/app"
 )
 
 func main() {
 	if err := app.Run(); err != nil {
-		fmt.Fprintln(os.Stderr, "Folio:", err)
+		fmt.Fprintln(os.Stderr, "WonderVision:", err)
 		os.Exit(1)
 	}
 }

@@ -1,4 +1,4 @@
-module folio
+module github.com/jewei/wondervision
 
 go 1.27.3
 

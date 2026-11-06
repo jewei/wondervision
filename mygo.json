@@ -1,7 +1,7 @@
 {
-  "name": "Folio",
-  "identifier": "app.folio.desktop",
+  "name": "WonderVision",
+  "identifier": "io.github.jewei.wondervision",
   "version": "0.1.0",
-  "main": "./cmd/folio",
+  "main": "./cmd/wondervision",
   "out": "build"
 }

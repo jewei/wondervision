@@ -9,7 +9,8 @@ import (
 )
 
 func TestShellSettlesAndFollowsTheme(t *testing.T) {
-	a := &App{}
+	a := newApp()
+	t.Cleanup(a.cancel)
 	tt := ui.NewTester(a.view, 1040, 720)
 	for _, dark := range []bool{false, true} {
 		tt.SetDark(dark)

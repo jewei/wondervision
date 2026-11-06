@@ -1,6 +1,6 @@
 ---
 name: verify-wondervision
-description: Verify WonderVision's native Linux desktop open/view workflow after changes to dialogs, explorer, tabs, Markdown, preferences, or application lifecycle.
+description: Verify WonderVision's native Linux desktop open/view workflow after changes to dialogs, explorer, tabs, Markdown, saves, conflicts, recovery, file actions, preferences, or application lifecycle.
 ---
 
 # Verify WonderVision
@@ -14,6 +14,7 @@ window, with GTK file dialogs on Linux. There is no web UI or local HTTP server.
 go test ./...
 go build -tags e2e -o build/wondervision-e2e ./cmd/wondervision
 python3 scripts/verify_native.py run --out build/verification/native-run
+python3 scripts/verify_editing.py --out build/verification/editing-run
 ```
 
 The output directory must not exist. The runner creates its own workspace,
@@ -21,6 +22,8 @@ standalone file, private preferences directory, and private Unix socket. Readine
 requires one native window titled `WonderVision`, the `Open File` control, and a
 matching live executable. The runner starts from empty preferences, drives the
 features, restarts once, and tears down its own process and scratch files.
+The editing runner uses a separate empty profile and workspace, tests explicit
+saves and external writes, then kills its own process to exercise crash recovery.
 
 Requirements are Linux X11, Python 3, libX11, libXtst, libatspi, `xwininfo`, and `xprop`. Set `DISPLAY`
 and `XAUTHORITY` to the authorized desktop before running. Managed desktops can

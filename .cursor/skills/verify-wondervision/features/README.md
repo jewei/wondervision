@@ -12,6 +12,8 @@ A failed or skipped entry point stays unverified; another path cannot replace it
 - [Browse a folder](explorer.md).
 - [Read and edit Markdown](markdown.md).
 - [Keep a session](session.md).
+- [Save, resolve conflicts, and recover drafts](editing.md), with the separate
+  `scripts/verify_editing.py` native runner.
 
 Every recipe runs with `python3 scripts/verify_native.py run --out` followed by a
 fresh directory under `build/verification/`. The common run covers the map in

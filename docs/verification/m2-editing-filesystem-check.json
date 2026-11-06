@@ -1,0 +1,18 @@
+{
+  "manual_save": {
+    "original_sha256": "7a4b35f7b5fffdbe567f32ba99d634b4167bf0deaf92860ba4eb4f901e8c26e6",
+    "saved_sha256": "aafe98c782fc1f258f66be85c9f7113529e1371b9b2200f70fa07e5d42e1e31b",
+    "mode": "0640",
+    "bom": true,
+    "newline": "CRLF",
+    "final_newline": true
+  },
+  "recovery": {
+    "paths": [
+      "todo.md"
+    ],
+    "private_files": true,
+    "original_unchanged": true,
+    "sensitive_excluded": true
+  }
+}

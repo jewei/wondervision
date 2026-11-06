@@ -1,0 +1,10 @@
+{
+  "verdict": "VERIFIED",
+  "checks": [
+    "Open File toolbar and shortcut work without a workspace",
+    "Open Folder toolbar and shortcut, visible dotfiles, and lazy expansion work",
+    "Edit, Preview, and Split use the same live buffer and display a local image",
+    "Local Markdown links, tab buffers, and sidebar shortcut work",
+    "Quit guard and lazy restart restore work; no content was written"
+  ]
+}

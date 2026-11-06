@@ -1,0 +1,22 @@
+{"request": {"id": 1, "method": "windows", "params": {}}, "result": {"windows": [{"id": 1, "title": "WonderVision", "kind": "content", "bounds": {"x": 162, "y": 152, "width": 1040, "height": 720}, "contentBounds": {"x": 162, "y": 152, "width": 1040, "height": 720}, "focused": false, "visible": true}]}}
+{"request": {"id": 6, "method": "input", "params": {"events": [{"type": "click", "x": 722.4, "y": 25.0}]}}, "result": {}}
+{"request": {"id": 13, "method": "input", "params": {"events": [{"type": "key", "key": "CmdOrCtrl+O"}]}}, "result": {}}
+{"request": {"id": 16, "method": "input", "params": {"events": [{"type": "key", "key": "CmdOrCtrl+Shift+O"}]}}, "result": {}}
+{"request": {"id": 19, "method": "input", "params": {"events": [{"type": "click", "x": 839.8, "y": 25.0}]}}, "result": {}}
+{"request": {"id": 24, "method": "act", "params": {"id": "11749771763626615842", "action": "expand"}}, "result": {}}
+{"request": {"id": 28, "method": "input", "params": {"events": [{"type": "click", "x": 132.0, "y": 291.0}]}}, "result": {}}
+{"request": {"id": 36, "method": "input", "params": {"events": [{"type": "click", "x": 266.6, "y": 114.0}]}}, "result": {}}
+{"request": {"id": 43, "method": "input", "params": {"events": [{"type": "click", "x": 419.0, "y": 114.0}]}}, "result": {}}
+{"request": {"id": 46, "method": "act", "params": {"id": "17136655617322143287", "action": "selectText", "from": 0, "to": 0}}, "result": {}}
+{"request": {"id": 47, "method": "act", "params": {"id": "17136655617322143287", "action": "insertText", "text": "# Unsaved heading\n\n"}}, "result": {}}
+{"request": {"id": 54, "method": "input", "params": {"events": [{"type": "click", "x": 132.0, "y": 179.0}]}}, "result": {}}
+{"request": {"id": 59, "method": "act", "params": {"id": "4410230687080476763", "action": "insertText", "text": "# in memory\n"}}, "result": {}}
+{"request": {"id": 61, "method": "input", "params": {"events": [{"type": "click", "x": 426.0, "y": 71.0}]}}, "result": {}}
+{"request": {"id": 64, "method": "input", "params": {"events": [{"type": "click", "x": 344.2, "y": 114.0}]}}, "result": {}}
+{"request": {"id": 67, "method": "input", "params": {"events": [{"type": "click", "x": 310.8, "y": 642.550048828125}]}}, "result": {}}
+{"request": {"id": 72, "method": "input", "params": {"events": [{"type": "click", "x": 426.0, "y": 71.0}]}}, "result": {}}
+{"request": {"id": 75, "method": "input", "params": {"events": [{"type": "key", "key": "CmdOrCtrl+B"}]}}, "result": {}}
+{"request": {"id": 79, "method": "input", "params": {"events": [{"type": "key", "key": "CmdOrCtrl+B"}]}}, "result": {}}
+{"request": {"id": 87, "method": "input", "params": {"events": [{"type": "click", "x": 606.6, "y": 390.0}]}}, "result": {}}
+{"request": {"id": 92, "method": "input", "params": {"events": [{"type": "click", "x": 471.4, "y": 390.0}]}}, "result": {}}
+{"request": {"id": 1, "method": "windows", "params": {}}, "result": {"windows": [{"id": 1, "title": "WonderVision", "kind": "content", "bounds": {"x": 162, "y": 152, "width": 1040, "height": 720}, "contentBounds": {"x": 162, "y": 152, "width": 1040, "height": 720}, "focused": false, "visible": true}]}}

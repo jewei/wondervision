@@ -1,0 +1,55 @@
+{"request": {"id": 1, "method": "windows", "params": {}}, "result": {"windows": [{"id": 1, "title": "WonderVision", "kind": "content", "bounds": {"x": 162, "y": 152, "width": 1040, "height": 720}, "contentBounds": {"x": 162, "y": 152, "width": 1040, "height": 720}, "focused": false, "visible": true}]}}
+{"request": {"id": 2, "method": "input", "params": {"events": [{"type": "click", "x": 849.8, "y": 25.0}]}}, "result": {}}
+{"request": {"id": 5, "method": "input", "params": {"events": [{"type": "click", "x": 132.0, "y": 151.0}]}}, "result": {}}
+{"request": {"id": 9, "method": "act", "params": {"id": "10001978229798482260", "action": "setValue", "text": "APP_NAME=WonderVision\nDEBUG=true\n"}}, "result": {}}
+{"request": {"id": 16, "method": "input", "params": {"events": [{"type": "key", "key": "CmdOrCtrl+S"}]}}, "result": {}}
+{"request": {"id": 18, "method": "input", "params": {"events": [{"type": "key", "key": "CmdOrCtrl+Shift+S"}]}}, "result": {}}
+{"request": {"id": 23, "method": "input", "params": {"events": [{"type": "click", "x": 132.0, "y": 151.0}]}}, "result": {}}
+{"request": {"id": 31, "method": "act", "params": {"id": "10001978229798482260", "action": "setValue", "text": "APP_NAME=buffer_wins\n"}}, "result": {}}
+{"request": {"id": 42, "method": "input", "params": {"events": [{"type": "click", "x": 788.6, "y": 116.0}]}}, "result": {}}
+{"request": {"id": 50, "method": "input", "params": {"events": [{"type": "click", "x": 591.0, "y": 566.0}]}}, "result": {}}
+{"request": {"id": 53, "method": "input", "params": {"events": [{"type": "click", "x": 979.6, "y": 116.0}]}}, "result": {}}
+{"request": {"id": 57, "method": "input", "params": {"events": [{"type": "click", "x": 594.6, "y": 400.0}]}}, "result": {}}
+{"request": {"id": 62, "method": "input", "params": {"events": [{"type": "click", "x": 788.6, "y": 167.0}]}}, "result": {}}
+{"request": {"id": 66, "method": "input", "params": {"events": [{"type": "click", "x": 591.0, "y": 566.0}]}}, "result": {}}
+{"request": {"id": 69, "method": "input", "params": {"events": [{"type": "click", "x": 979.6, "y": 167.0}]}}, "result": {}}
+{"request": {"id": 72, "method": "input", "params": {"events": [{"type": "click", "x": 594.6, "y": 400.0}]}}, "result": {}}
+{"request": {"id": 78, "method": "input", "params": {"events": [{"type": "key", "key": "CmdOrCtrl+W"}]}}, "result": {}}
+{"request": {"id": 81, "method": "input", "params": {"events": [{"type": "click", "x": 165.4, "y": 25.0}]}}, "result": {}}
+{"request": {"id": 84, "method": "input", "params": {"events": [{"type": "click", "x": 252.0, "y": 341.0}]}}, "result": {}}
+{"request": {"id": 87, "method": "act", "params": {"id": "7984017318138316556", "action": "setValue", "text": "notes"}}, "result": {}}
+{"request": {"id": 89, "method": "input", "params": {"events": [{"type": "key", "key": "Enter"}]}}, "result": {}}
+{"request": {"id": 92, "method": "input", "params": {"events": [{"type": "click", "x": 165.4, "y": 25.0}]}}, "result": {}}
+{"request": {"id": 95, "method": "input", "params": {"events": [{"type": "click", "x": 252.0, "y": 309.0}]}}, "result": {}}
+{"request": {"id": 98, "method": "act", "params": {"id": "7984017318138316556", "action": "setValue", "text": "notes/draft.md"}}, "result": {}}
+{"request": {"id": 100, "method": "input", "params": {"events": [{"type": "key", "key": "Enter"}]}}, "result": {}}
+{"request": {"id": 105, "method": "input", "params": {"events": [{"type": "click", "x": 266.6, "y": 165.0}]}}, "result": {}}
+{"request": {"id": 108, "method": "act", "params": {"id": "6232026970007118577", "action": "setValue", "text": "# File operation draft\n"}}, "result": {}}
+{"request": {"id": 110, "method": "input", "params": {"events": [{"type": "key", "key": "CmdOrCtrl+W"}]}}, "result": {}}
+{"request": {"id": 114, "method": "input", "params": {"events": [{"type": "click", "x": 548.0, "y": 380.0}]}}, "result": {}}
+{"request": {"id": 118, "method": "input", "params": {"events": [{"type": "click", "x": 165.4, "y": 25.0}]}}, "result": {}}
+{"request": {"id": 121, "method": "input", "params": {"events": [{"type": "click", "x": 252.0, "y": 373.0}]}}, "result": {}}
+{"request": {"id": 124, "method": "act", "params": {"id": "7984017318138316556", "action": "setValue", "text": "renamed.md"}}, "result": {}}
+{"request": {"id": 126, "method": "input", "params": {"events": [{"type": "key", "key": "Enter"}]}}, "result": {}}
+{"request": {"id": 132, "method": "input", "params": {"events": [{"type": "click", "x": 165.4, "y": 25.0}]}}, "result": {}}
+{"request": {"id": 135, "method": "input", "params": {"events": [{"type": "click", "x": 252.0, "y": 405.0}]}}, "result": {}}
+{"request": {"id": 138, "method": "act", "params": {"id": "7984017318138316556", "action": "setValue", "text": "moved.md"}}, "result": {}}
+{"request": {"id": 140, "method": "input", "params": {"events": [{"type": "key", "key": "Enter"}]}}, "result": {}}
+{"request": {"id": 149, "method": "input", "params": {"events": [{"type": "click", "x": 165.4, "y": 25.0}]}}, "result": {}}
+{"request": {"id": 152, "method": "input", "params": {"events": [{"type": "click", "x": 252.0, "y": 437.0}]}}, "result": {}}
+{"request": {"id": 156, "method": "input", "params": {"events": [{"type": "click", "x": 615.8, "y": 440.0}]}}, "result": {}}
+{"request": {"id": 159, "method": "input", "params": {"events": [{"type": "click", "x": 165.4, "y": 25.0}]}}, "result": {}}
+{"request": {"id": 162, "method": "input", "params": {"events": [{"type": "click", "x": 252.0, "y": 437.0}]}}, "result": {}}
+{"request": {"id": 165, "method": "input", "params": {"events": [{"type": "click", "x": 498.8, "y": 440.0}]}}, "result": {}}
+{"request": {"id": 169, "method": "input", "params": {"events": [{"type": "click", "x": 132.0, "y": 398.0}]}}, "result": {}}
+{"request": {"id": 173, "method": "input", "params": {"events": [{"type": "click", "x": 266.6, "y": 165.0}]}}, "result": {}}
+{"request": {"id": 176, "method": "act", "params": {"id": "8771186749405603570", "action": "setValue", "text": "# Recovered task\n\n- [ ] Finish review\n"}}, "result": {}}
+{"request": {"id": 179, "method": "input", "params": {"events": [{"type": "click", "x": 132.0, "y": 230.0}]}}, "result": {}}
+{"request": {"id": 183, "method": "act", "params": {"id": "13018238033718613690", "action": "setValue", "text": "APP_NAME=must_not_recover\n"}}, "result": {}}
+{"request": {"id": 186, "method": "input", "params": {"events": [{"type": "click", "x": 393.8, "y": 122.0}]}}, "result": {}}
+{"request": {"id": 1, "method": "windows", "params": {}}, "result": {"windows": [{"id": 1, "title": "WonderVision", "kind": "content", "bounds": {"x": 162, "y": 152, "width": 1040, "height": 720}, "contentBounds": {"x": 162, "y": 152, "width": 1040, "height": 720}, "focused": false, "visible": true}]}}
+{"request": {"id": 3, "method": "input", "params": {"events": [{"type": "click", "x": 540.2, "y": 25.0}]}}, "result": {}}
+{"request": {"id": 10, "method": "input", "params": {"events": [{"type": "click", "x": 663.8, "y": 332.0}]}}, "result": {}}
+{"request": {"id": 18, "method": "input", "params": {"events": [{"type": "key", "key": "CmdOrCtrl+S"}]}}, "result": {}}
+{"request": {"id": 20, "method": "act", "params": {"id": "4973359832641368026", "action": "setValue", "text": "# Save before quit\n"}}, "result": {}}
+{"request": {"id": 25, "method": "input", "params": {"events": [{"type": "click", "x": 734.2, "y": 390.0}]}}, "result": {}}

@@ -1,0 +1,12 @@
+{
+  "verdict": "VERIFIED",
+  "checks": [
+    "Typing is memory-only; Ctrl+S preserves UTF-8 BOM, CRLF, final newline and mode 0640",
+    "Native Save As creates the chosen copy, retargets the tab and refreshes Explorer",
+    "Scoped watcher reloads clean files, preserves dirty buffers and rejects stale overwrite approval",
+    "Create folder/file, rename and move retain dirty buffers; close and permanent delete require decisions",
+    "Crash/restart offers private non-sensitive recovery for review, excludes .env, and removes the copy after Save",
+    "Save and Quit completes filesystem work and recovery cleanup before exit"
+  ],
+  "display": ":99"
+}

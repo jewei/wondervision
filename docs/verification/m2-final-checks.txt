@@ -1,0 +1,25 @@
+Source 31bc6b0170df557053e92fc393549bf2bdb265f6
+
+$ go test -race ./...
+?   	github.com/jewei/wondervision/cmd/wondervision	[no test files]
+ok  	github.com/jewei/wondervision/internal/app	(cached)
+ok  	github.com/jewei/wondervision/internal/documents	(cached)
+ok  	github.com/jewei/wondervision/internal/guardrails	(cached)
+ok  	github.com/jewei/wondervision/internal/preferences	(cached)
+ok  	github.com/jewei/wondervision/internal/workspace	(cached)
+exit=0
+
+$ go vet ./...
+exit=0
+
+$ go tool mygo vet
+exit=0
+
+$ go build -tags mygo_noinspector -trimpath -o build/wondervision ./cmd/wondervision
+exit=0
+
+Production dependency graph excludes MyGo automation plugin.
+{
+  "build/wondervision": "54a731b163e6556772debe960e14a2d2c20da56c3f2601fb81d890c16c24760d",
+  "build/wondervision-e2e": "27f89bfcc1a509bdc6b1ebdf190c12779641f3662f3b5b5970557d0879d20627"
+}

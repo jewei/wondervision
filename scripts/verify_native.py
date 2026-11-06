@@ -49,7 +49,7 @@ class Desktop:
             self.t.XTestFakeKeyEvent(self.d, c, 0, 0)
         self.x.XSync(self.d, 0)
 
-    def pick(self, title, path, out):
+    def pick(self, title, path, out, accept='Open'):
         def locate():
             tree = subprocess.check_output(['xwininfo', '-root', '-tree'], text=True, timeout=3)
             for found in re.finditer(r'(0x[0-9a-f]+) "' + re.escape(title) + r'"', tree):
@@ -83,8 +83,8 @@ class Desktop:
                     if not locate():
                         return 'closed'
                     current = bridge.find_dialog(title)
-                    return bridge.find_button(current, 'Open') if current else None
-                button = until(button_or_closed, 'Open button or completed selection')
+                    return bridge.find_button(current, accept) if current else None
+                button = until(button_or_closed, accept + ' button or completed selection')
                 if button != 'closed':
                     bridge.activate(button)
             until(lambda: not locate(), 'dialog selection accepted')
@@ -178,7 +178,9 @@ class Native:
             client.settimeout(20)
             client.connect(str(self.sock))
             client.sendall((json.dumps(request) + '\n').encode())
-            answer = json.loads(client.makefile().readline())
+            line = client.makefile().readline()
+            assert line, 'native automation disconnected; inspect app.log for the application failure'
+            answer = json.loads(line)
         if 'error' in answer:
             raise AssertionError(answer['error'])
         if method != 'capture':
@@ -346,6 +348,9 @@ def run(binary, out):
         results.append('Quit guard and lazy restart restore work; no content was written')
         (out / 'result.json').write_text(json.dumps({'verdict': 'VERIFIED', 'checks': results}, indent=2))
         print(json.dumps({'verdict': 'VERIFIED', 'out': str(out), 'checks': results}, indent=2))
+    except Exception as error:
+        (out / 'result.json').write_text(json.dumps({'verdict': 'NOT VERIFIED', 'error': str(error), 'completed': results}, indent=2))
+        raise
     finally:
         if proc is not None and proc.poll() is None:
             proc.terminate()

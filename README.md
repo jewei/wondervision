@@ -1,7 +1,7 @@
 # WonderVision
 
 A native, single-window Go text workspace using MyGo. This repository implements
-the first two milestones of [the specification](spec.md).
+M0–M2 of [the specification](spec.md).
 
 ## Build and run
 
@@ -24,17 +24,36 @@ No frontend, local server, or runtime network client is used.
 - M1: native Open File/Open Folder, lazy virtualized Explorer, retained tabs,
   highlighted text/code editor, live Markdown Preview/Edit/Split with local
   images and links, and lazy restoration of the workspace and active file.
+- M2: manual Save/Save As, dirty tabs and protected close/quit, fingerprinted
+  atomic saves, scoped external-change watches, explicit conflict resolution,
+  private recovery for non-sensitive drafts, and workspace file actions.
 
-Edits stay in memory. This build has no Save/Save As, tab closing, file mutations,
-external-change detection, recovery, Quick Open, search, or command palette.
-Those belong to M2/M3. Quit confirms before discarding edits. Files over 20 MiB
+Edits stay in memory until Save. Recovery copies follow non-sensitive edits after
+15 seconds of quiescence and are reviewed after a crash; `.env`, keys, certificates,
+and credential/secret filenames have recovery disabled. Quick Open, search, and
+the command palette remain M3. Files over 20 MiB
 are refused; Markdown over 2 MiB starts in Edit and requires an explicit preview
 action. Only UTF-8 text is supported. The Linux desktop was exercised; macOS and
 Windows have not been built or run in this pass.
 
 Preferences contain paths and UI choices in the OS config directory under
-`wondervision/preferences.json`. No document contents or metadata are written
-inside the user's workspace.
+`wondervision/preferences.json`. Private recovery copies live under the OS cache
+directory in `wondervision/recovery`; document contents never enter preferences.
+No app metadata or index is placed inside the workspace.
+
+Workspace actions are under **File**. Rename/move keep open buffers and prevent
+destination replacement; their exclusive adapter currently supports Linux amd64
+and arm64. Other platforms report an unsupported operation. Deletion is explicitly
+permanent and confirmed: MyGo's path-based Trash API does not provide the rooted
+filesystem boundary used here. Save preserves supported LF/CRLF, BOM, final
+newline and mode bits. Atomic replacement cannot preserve every ACL, ownership,
+hard-link relationship or filesystem property. An outside write can race the final
+check and rename; known conflicts block an unconfirmed save.
+
+Recovery uses nonblocking process locks on Linux/BSD/macOS (tested on Linux).
+It fails closed on Windows and other targets until an adapter is verified.
+If another session holds the lock, an error preserves the existing copy; another
+edit retries recovery. This adds no idle polling.
 
 ## Verification
 
@@ -44,7 +63,10 @@ go vet ./...
 go tool mygo vet
 go build -tags e2e -o build/wondervision-e2e ./cmd/wondervision
 python3 scripts/verify_native.py run --out build/verification/native-run
+python3 scripts/verify_editing.py --out build/verification/editing-run
 python3 scripts/verify_request_order.py --mutation-check
+python3 scripts/verify_save_model.py
+python3 scripts/verify_recovery.py
 ```
 
 The native driver needs an authorized X11 desktop, Python 3, libX11, libXtst,
@@ -52,10 +74,15 @@ libatspi, `xwininfo`, and `xprop`. The `e2e` tag adds a private test-only Unix
 socket. It is excluded from production. Only one driver should use a desktop at
 a time. All test workspaces and preferences are isolated.
 
+The save-model helper additionally needs Java 11+ and downloads a checksum-pinned
+development-only TLC jar. The application gains no runtime dependency.
+
 Project-local pstack verification skills live in `.cursor/skills/`. See
-[the workflow](docs/WORKFLOW.md), [verification evidence](docs/verification/M1.md),
+[the M2 workflow](docs/M2-WORKFLOW.md), [M2 evidence](docs/verification/M2.md),
 and [observed performance](PERFORMANCE.md). Bounded request-order tests cover
 143 schedules and reject two deliberately broken guard variants; they are not an
-unbounded formal proof.
+unbounded formal proof. A separate finite TLA+ save model and three real-code
+mutations check save/edit/conflict ordering. The final filesystem race is an
+explicitly reproduced limit. The 10-minute and 24-hour release gates remain M4.
 
 ![WonderVision Split view](docs/screenshots/split.png)

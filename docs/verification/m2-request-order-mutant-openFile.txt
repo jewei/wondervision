@@ -1,0 +1,12 @@
+=== RUN   TestFileCompletionSchedules
+    request_order_test.go:101: file requests=1 schedules=1
+    request_order_test.go:82: stale file completion changed tabs; schedule [1 2 -1 -2] step -1: got 1 want 0
+--- FAIL: TestFileCompletionSchedules (0.00s)
+=== RUN   TestFolderCompletionSchedules
+    request_order_test.go:138: folder requests=1 schedules=1
+    request_order_test.go:138: folder requests=2 schedules=3
+    request_order_test.go:138: folder requests=3 schedules=15
+--- PASS: TestFolderCompletionSchedules (0.01s)
+FAIL
+FAIL	github.com/jewei/wondervision/internal/app	0.023s
+FAIL

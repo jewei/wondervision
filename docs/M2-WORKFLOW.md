@@ -12,16 +12,16 @@ before the next slice begins. Commits use Conventional Commits and are pushed to
 `origin/work`.
 
 - [x] Read the existing verification skills and inspect the pinned APIs.
-- [ ] Add an immutable save plan, content fingerprints, atomic replacement, and
+- [x] Add an immutable save plan, content fingerprints, atomic replacement, and
   dirty-state transitions. Exercise format preservation, failures, conflicts,
   and editing while saving against actual files.
-- [ ] Wire manual Save/Save As and close/quit decisions into the native UI.
-- [ ] Add scoped file watches and explicit reload/compare/overwrite resolution.
-- [ ] Add edit-triggered recovery with no snapshots for sensitive filenames.
-- [ ] Add rooted create/rename/move/delete operations and their native controls.
-- [ ] Add architecture guardrails and a TLA+ save-order model with a real-code
+- [x] Wire manual Save/Save As and close/quit decisions into the native UI.
+- [x] Add scoped file watches and explicit reload/compare/overwrite resolution.
+- [x] Add edit-triggered recovery with no snapshots for sensitive filenames.
+- [x] Add rooted create/rename/move/delete operations and their native controls.
+- [x] Add architecture guardrails and a TLA+ save-order model with a real-code
   regression replay and deliberately broken variants.
-- [ ] Run native user journeys, race/vet/build checks, review evidence and risks,
+- [x] Run native user journeys, race/vet/build checks, review evidence and risks,
   update reusable verification skills, and push the verified slices.
 
 The UI thread owns document/session state. An immutable buffer snapshot crosses

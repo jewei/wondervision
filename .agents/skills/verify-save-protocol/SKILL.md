@@ -33,6 +33,9 @@ There is no application runtime dependency on Java or TLC.
 Read every model result with pstack's **`/statechart`** skill. Use
 `verification/save/Save.view.mjs` for readable state names. Follow that skill's
 current invocation instructions; its commands are intentionally not copied here.
+Where `/statechart` is not installed, read TLC's counterexample trace directly
+and retell it as numbered steps in the code's words (`internal/documents`,
+`internal/app` function names), using the state names in `Save.view.mjs`.
 Reports and shortest counterexample paths from the recorded run are under
 `docs/verification/save-statechart/`. Above its 500-state chart budget, a passing
 run has a report without a whole-graph chart; failing runs retain bug-path charts.
@@ -94,5 +97,7 @@ snapshot, approval lifetime and receipt lifetime with the model and replay.
 Update the finite model when intended behavior changes; rerun model/mutations and
 the relevant Go tests. Move the code sync commit only after that comparison.
 Use pstack's `/maintain-formal-verification-skill` after changes that did not
-recheck coverage. Follow `verify-wondervision` for empirical native editing flows;
+recheck coverage; where it is not installed, run `git diff --stat <sync
+commit>..HEAD` over the covered files and recheck each changed step against the
+model before moving the sync commit. Follow `verify-wondervision` for empirical native editing flows;
 run `python3 scripts/verify_recovery.py` for the separate recovery-lock regressions.

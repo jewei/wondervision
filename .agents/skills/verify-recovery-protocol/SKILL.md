@@ -80,9 +80,7 @@ stateDiagram-v2
 
 ## Coverage record
 
-Code sync commit: `f688751ab19012e676fd85484f51075d081dad10`. If that commit is
-missing because the branch was squash-merged, use the commit on `work` that
-added `verification/recovery/`.
+Code sync commit: `9528ae5803824c4828ad7bb44f052c017db14f5a`.
 
 | Model action | Code |
 |---|---|
@@ -100,7 +98,7 @@ The app layer is not modeled. `internal/app/recovery.go` (`writeRecovery`,
 To check for drift:
 
 ```sh
-git diff --stat f688751ab19012e676fd85484f51075d081dad10..HEAD -- internal/documents/recovery.go internal/documents/recovery_lock.go internal/documents/recovery_lock_*.go
+git diff --stat 9528ae5803824c4828ad7bb44f052c017db14f5a..HEAD -- internal/documents/recovery.go internal/documents/recovery_lock.go internal/documents/recovery_lock_*.go
 ```
 
 ## Interpret results

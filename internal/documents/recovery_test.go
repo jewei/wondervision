@@ -69,6 +69,54 @@ func TestPreviousSessionDraftRequiresReview(t *testing.T) {
 	}
 }
 
+// A recovered claim covers exactly the copy the user reviewed. If the other
+// session writes a newer draft afterwards, the stale claim must not replace it.
+// This is the BrokenClaim counterexample of verification/recovery/Recovery.tla.
+func TestStaleRecoveryClaimCannotReplaceNewerDraft(t *testing.T) {
+	ctx := context.Background()
+	root := t.TempDir()
+	path := filepath.Join(root, "todo.md")
+	if err := os.WriteFile(path, []byte("original"), 0600); err != nil {
+		t.Fatal(err)
+	}
+	other, err := Open(ctx, path, root, Edit)
+	if err != nil {
+		t.Fatal(err)
+	}
+	old := NewRecoveryStore(filepath.Join(t.TempDir(), "recovery"))
+	fresh := NewRecoveryStore(old.Dir)
+	other.Buffer.Set("first draft")
+	plan, _ := other.RecoverySnapshot()
+	if err = old.Write(ctx, plan); err != nil {
+		t.Fatal(err)
+	}
+	records, err := fresh.List(ctx)
+	if err != nil || len(records) != 1 {
+		t.Fatalf("list: %v %v", records, err)
+	}
+	recovered, err := fresh.Load(ctx, records[0])
+	if err != nil {
+		t.Fatal(err)
+	}
+	other.Buffer.Set("newer unreviewed draft")
+	plan, _ = other.RecoverySnapshot()
+	if err = old.Write(ctx, plan); err != nil {
+		t.Fatal(err)
+	}
+	recovered.Buffer.Set("edits on the reviewed copy")
+	plan, _ = recovered.RecoverySnapshot()
+	if err = fresh.Write(ctx, plan); !errors.Is(err, ErrUnreviewedRecovery) {
+		t.Fatalf("stale claim replaced a newer unreviewed draft: %v", err)
+	}
+	records, err = fresh.List(ctx)
+	if err != nil || len(records) != 1 {
+		t.Fatalf("list after rejected write: %v %v", records, err)
+	}
+	if kept, err := fresh.Load(ctx, records[0]); err != nil || kept.Buffer.String() != "newer unreviewed draft" {
+		t.Fatalf("newer draft was not preserved: %v", err)
+	}
+}
+
 func TestRecoveryPrivateRoundTripAndRemoval(t *testing.T) {
 	root := t.TempDir()
 	path := filepath.Join(root, "todo.md")

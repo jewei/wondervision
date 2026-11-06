@@ -88,6 +88,9 @@ func (a *App) observeEdits() {
 	}
 }
 
+// writeRecovery is safe to call for any document: sensitive paths (.env, keys,
+// credentials) are refused inside documents.RecoverySnapshot and
+// RecoveryStore.Write, so callers need not check documents.Sensitive first.
 func (a *App) writeRecovery(d *documents.Document, ctx context.Context) {
 	if a.recoveryStore == nil || a.allowQuit || a.hasUnreviewedRecovery(d.Path) {
 		return

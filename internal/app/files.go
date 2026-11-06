@@ -191,7 +191,7 @@ func (a *App) executeFileAction(r *fileRequest, destination string) {
 						delete(a.checking, d)
 						delete(a.checkAgain, d)
 						a.recoverySaved(d, oldPath)
-						if d.Dirty() && !documents.Sensitive(d.Path) {
+						if d.Dirty() {
 							a.writeRecovery(d, a.ctx)
 						}
 						a.startWatch(d)

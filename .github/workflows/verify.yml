@@ -1,0 +1,114 @@
+name: verify
+
+on:
+  pull_request:
+  push:
+    branches: [work]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: verify-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  checks:
+    name: Go checks and headless verifiers
+    runs-on: ubuntu-24.04
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-go@v5
+        with:
+          go-version-file: go.mod
+
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '21'
+
+      - name: Cache TLC
+        uses: actions/cache@v4
+        with:
+          path: build/tools
+          key: tlc-1.8.0
+
+      - name: go vet
+        run: go vet ./...
+
+      - name: go test -race (includes internal/guardrails)
+        run: go test -race ./...
+
+      - name: mygo vet
+        run: go tool mygo vet
+
+      - name: Build production and e2e binaries
+        run: |
+          go build -tags mygo_noinspector -trimpath -o build/wondervision ./cmd/wondervision
+          go build -tags e2e -o build/wondervision-e2e ./cmd/wondervision
+
+      - name: Request ordering (with mutation check)
+        run: python3 scripts/verify_request_order.py --mutation-check
+
+      - name: Recovery lock (with mutation check)
+        run: python3 scripts/verify_recovery.py
+
+      - name: Save protocol model (TLC)
+        run: python3 scripts/verify_save_model.py
+
+      - name: Upload evidence
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: verification-checks
+          path: build/verification/
+          if-no-files-found: ignore
+
+  native:
+    name: Native GUI verifiers
+    runs-on: ubuntu-24.04
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-go@v5
+        with:
+          go-version-file: go.mod
+
+      - name: Install GTK and a headless desktop
+        run: |
+          sudo apt-get update -qq
+          sudo DEBIAN_FRONTEND=noninteractive apt-get install -y -qq \
+            libgtk-3-0t64 libx11-6 libxtst6 x11-utils xvfb openbox at-spi2-core dbus-x11
+
+      - name: Build e2e binary
+        run: go build -tags e2e -o build/wondervision-e2e ./cmd/wondervision
+
+      # The drivers need a window manager: without one, GTK dialogs and Alt+F4
+      # do not behave as on a desktop and the quit-guard checks time out.
+      - name: verify_native.py
+        run: |
+          xvfb-run -a -s '-screen 0 1440x900x24' dbus-run-session -- bash -c '
+            openbox >/dev/null 2>&1 & wm=$!
+            for i in $(seq 50); do xprop -root _NET_SUPPORTING_WM_CHECK 2>/dev/null | grep -q window && break; sleep 0.1; done
+            python3 scripts/verify_native.py run --out build/verification/native; rc=$?
+            kill $wm; exit $rc'
+
+      - name: verify_editing.py
+        run: |
+          xvfb-run -a -s '-screen 0 1440x900x24' dbus-run-session -- bash -c '
+            openbox >/dev/null 2>&1 & wm=$!
+            for i in $(seq 50); do xprop -root _NET_SUPPORTING_WM_CHECK 2>/dev/null | grep -q window && break; sleep 0.1; done
+            python3 scripts/verify_editing.py --out build/verification/editing; rc=$?
+            kill $wm; exit $rc'
+
+      - name: Upload evidence
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: verification-native
+          path: build/verification/
+          if-no-files-found: ignore

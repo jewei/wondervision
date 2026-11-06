@@ -67,6 +67,27 @@ func TestClaimDiscardFailureBlocksQuit(t *testing.T) {
 		t.Fatalf("quit completed despite rejected claim cleanup: %s", a.err)
 	}
 }
+
+func TestDiscardQuitBlocksWhenCleanupCannotBeQueued(t *testing.T) {
+	a, _, old, _ := recoveredFixture(t)
+	for len(a.jobs) < cap(a.jobs) {
+		a.jobs <- func() func() { return nil }
+	}
+	finished := false
+	a.finishQuit = func() { finished = true }
+	a.approveDiscardQuit()
+	if !a.deferQuit() {
+		t.Fatal("quit bypassed rejected recovery cleanup")
+	}
+	drain(t, a)
+	if finished || a.allowQuit || !a.askQuit {
+		t.Fatal("queue saturation lost the cleanup failure")
+	}
+	records, err := old.List(a.ctx)
+	if err != nil || len(records) != 1 {
+		t.Fatal("failed cleanup did not preserve the copy")
+	}
+}
 func TestRecoveredRenameCleansOldClaim(t *testing.T) {
 	for _, name := range []string{"renamed.md", ".env"} {
 		t.Run(name, func(t *testing.T) {

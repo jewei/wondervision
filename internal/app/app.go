@@ -489,9 +489,9 @@ func (a *App) settleQuit() {
 
 func (a *App) approveDiscardQuit() {
 	a.quitApproval = make(map[*documents.Document]uint64, len(a.docs))
+	a.allowQuit = true
 	for _, d := range a.docs {
 		a.quitApproval[d] = d.Buffer.Version()
 		a.discardRecovery(d)
 	}
-	a.allowQuit = true
 }

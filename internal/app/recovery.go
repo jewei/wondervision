@@ -138,6 +138,8 @@ func (a *App) removeRecoveryPath(path string) {
 		}
 	}) {
 		a.pendingWrites--
+		a.allowQuit = false
+		a.quitWhenSaved = false
 	}
 }
 
@@ -267,6 +269,8 @@ func (a *App) discardRecoveryRecord(record documents.RecoveryRecord) {
 		}
 	}) {
 		a.pendingWrites--
+		a.allowQuit = false
+		a.quitWhenSaved = false
 	}
 }
 

@@ -1,8 +1,8 @@
-# Folio — Lean Markdown & Text Workspace
+# WonderVision — Lean Markdown & Text Workspace
 
 **Status:** Implementation specification (MVP v0.1)  
 **Updated:** 2026-11-06  
-**Working name:** Folio (rename freely)  
+**Project name:** WonderVision  
 **Audience:** Coding agent implementing the application  
 **Framework:** [MyGo](https://github.com/egoist/mygo), native Go UI
 
@@ -74,7 +74,7 @@
 
 **E. Stay open all day**
 1. Open a moderate workspace and a few tabs.
-2. Leave Folio idle or minimized for several hours.
+2. Leave WonderVision idle or minimized for several hours.
 3. No periodic repainting, crawling, repeated preview parsing, or needless disk reads.
 4. External edits to an open file can still be detected and surfaced without silently discarding unsaved work.
 
@@ -121,7 +121,7 @@ If a requested feature conflicts with performance or simplicity, **prefer omissi
 
 ```text
 ┌──────────────────────────────────────────────────────────────────┐
-│ Folio | [workspace name]                   [Search] [Palette]     │
+│ WonderVision | [workspace name]                   [Search] [Palette]     │
 ├───────────────────┬──────────────────────────────────────────────┤
 │ EXPLORER          │ [report.md] [todo.md •] [config.yaml]        │
 │ project/          ├──────────────────────────────────────────────┤
@@ -206,18 +206,18 @@ Use **native UI only** with the pinned MyGo version. Verified native components/
 
 Prefer **`ui.Outline` over `ui.Tree`** for the explorer because `ui.Tree` builds every visible item while `ui.Outline` builds only rows currently in view. Opened directories should load their children lazily; outline virtualization does **not** by itself make disk traversal lazy.
 
-The editor buffer uses a rope and keeps versions/undo data; it handles syntax highlighting and efficient visible-line rendering. `editor.Buffer` preserves line-ending style on write, but **BOM behavior, atomic-save behavior, and state after concurrent edits must be verified or handled by Folio**.
+The editor buffer uses a rope and keeps versions/undo data; it handles syntax highlighting and efficient visible-line rendering. `editor.Buffer` preserves line-ending style on write, but **BOM behavior, atomic-save behavior, and state after concurrent edits must be verified or handled by WonderVision**.
 
 The Markdown renderer supports CommonMark, GitHub tables, checklists, fenced-code highlighting, local images, and incremental updates. **Raw HTML is not an HTML-executing browser preview**, and mathematical notation is not guaranteed to be fully typeset; do not promise browser-equivalent rendering.
 
-The native window should settle without requesting new frames when untouched. Any continuously running animation or timer added by Folio is a regression.
+The native window should settle without requesting new frames when untouched. Any continuously running animation or timer added by WonderVision is a regression.
 
 ### Initialize
 
 ```bash
 # See the upstream docs for supported Go versions and platform requirements.
-go run github.com/egoist/mygo/cmd/mygo@latest init -template native folio
-cd folio
+go run github.com/egoist/mygo/cmd/mygo@latest init -template native wondervision
+cd wondervision
 go tool mygo dev
 ```
 
@@ -228,8 +228,8 @@ Once initialized: **pin and record a tested MyGo release** and run reproducible 
 ## 7. Proposed repository structure — intentionally small
 
 ```text
-folio/
-├── cmd/folio/main.go            # App entry point / native window
+wondervision/
+├── cmd/wondervision/main.go            # App entry point / native window
 ├── internal/app/
 │   ├── app.go                   # State, wiring, lifecycle
 │   ├── view.go                  # Window layout, tabs, explorer, preview
@@ -353,7 +353,7 @@ Atomic rename is not a universal compare-and-swap: an outside writer can race th
 | Idle CPU | **<0.5% of one logical core on average** over 10 minutes after settling | OS per-process CPU, foreground and minimized |
 | Idle network | **Zero requests** | Firewall/network inspection |
 | Warm launch to usable window | **<=1.5 s** on reference SSD machine | Repeated median after process exit |
-| Resident memory with reference workload | **<=150 MiB desired**, with OS-specific deviations documented | OS RSS/private footprint; include all Folio processes |
+| Resident memory with reference workload | **<=150 MiB desired**, with OS-specific deviations documented | OS RSS/private footprint; include all WonderVision processes |
 | Memory after 24h idle | No monotonic leak; **<=20 MiB sustained increase** from stabilized baseline after comparable GC/state | 24h process memory samples + heap profiles |
 | Quick Open appearance | **<=100 ms** to focused overlay; results may continue loading | Instrument input-to-frame latency |
 | Quick Open cached query | **<=100 ms** typical for 1,000 cached paths | Benchmark fuzzy matcher + UI |
@@ -401,9 +401,9 @@ Local filesystem (original workspace files)
 
 **v0.2 (if daily use demonstrates need):** pinned/recent files, optional quick-capture note, better in-file navigation, Markdown backlinks, read-only comparison of external edits using MyGo's diff viewer, user-configured ignored directories.
 
-**v0.3 (optional MCP):** separate opt-in `folio-mcp` process based on the official [MCP Go SDK](https://github.com/modelcontextprotocol/go-sdk), first exposing `list_files`, `read_file`, and `search_files` over stdio. No MCP process runs with the GUI by default. Restrict to explicit workspace roots; **exclude `.env`, credentials, private keys, and other sensitive patterns from MCP access by default**, even though the human UI can read them. Later writes require explicit per-action approval and diff review. Do not expose unsaved editor buffers automatically.
+**v0.3 (optional MCP):** separate opt-in `wondervision-mcp` process based on the official [MCP Go SDK](https://github.com/modelcontextprotocol/go-sdk), first exposing `list_files`, `read_file`, and `search_files` over stdio. No MCP process runs with the GUI by default. Restrict to explicit workspace roots; **exclude `.env`, credentials, private keys, and other sensitive patterns from MCP access by default**, even though the human UI can read them. Later writes require explicit per-action approval and diff review. Do not expose unsaved editor buffers automatically.
 
-**MCP is not needed for agents to maintain their memory.** Existing agents can write standard Markdown files, and Folio can read/review those files immediately as ordinary workspace documents.
+**MCP is not needed for agents to maintain their memory.** Existing agents can write standard Markdown files, and WonderVision can read/review those files immediately as ordinary workspace documents.
 
 ## 12. Build sequence and deliverables
 

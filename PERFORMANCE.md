@@ -6,7 +6,7 @@ its software renderer. Go 1.27.3, MyGo v0.7.4. Measurements on 2026-11-06.
 
 ## M0
 
-Production build: `go build -tags mygo_noinspector -trimpath -o build/folio ./cmd/folio`.
+Production build: `go build -tags mygo_noinspector -trimpath -o build/wondervision ./cmd/wondervision`.
 After launch settled, sampled `/proc/PID/stat` and `/proc/PID/status` before and
 after 30.001 seconds with the native shell foreground and untouched:
 

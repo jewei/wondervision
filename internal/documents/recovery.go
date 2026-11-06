@@ -84,6 +84,9 @@ func (d *Document) RecoverySnapshot() (RecoveryPlan, error) {
 	return RecoveryPlan{record: RecoveryRecord{Path: d.Path, Area: d.Area, Base: d.saved, SavedRevision: d.state.saved, BOM: d.BOM, Newline: d.Buffer.LineEnding(), Format: 1}, snapshot: s, claim: d.recoveryClaim}, nil
 }
 
+// recoveryTempPrefix names Write's temp files in the recovery directory.
+const recoveryTempPrefix = ".recovery-"
+
 func recoveryName(path string) string {
 	sum := sha256.Sum256([]byte(path))
 	return hex.EncodeToString(sum[:]) + ".draft"
@@ -156,7 +159,7 @@ func (store RecoveryStore) Write(ctx context.Context, plan RecoveryPlan) error {
 	} else if !errors.Is(e, os.ErrNotExist) {
 		return e
 	}
-	temp := ".recovery-" + rand.Text()
+	temp := recoveryTempPrefix + rand.Text()
 	f, err := root.OpenFile(temp, os.O_CREATE|os.O_EXCL|os.O_WRONLY, 0600)
 	if err != nil {
 		return err
@@ -235,6 +238,13 @@ func (store RecoveryStore) List(ctx context.Context) ([]RecoveryRecord, error) {
 		}
 		entries, readErr := dir.ReadDir(32)
 		for _, entry := range entries {
+			// Write holds the lock from creating its temp file until the temp
+			// is renamed or removed, so with the lock held every temp file was
+			// left by a writer that crashed. verification/recovery checks this.
+			if lock != nil && strings.HasPrefix(entry.Name(), recoveryTempPrefix) && entry.Type().IsRegular() {
+				root.Remove(entry.Name())
+				continue
+			}
 			if entry.IsDir() || entry.Type()&os.ModeSymlink != 0 || !strings.HasSuffix(entry.Name(), ".draft") {
 				continue
 			}

@@ -15,19 +15,24 @@ PRODUCTION = ROOT / 'internal/documents/recovery.go'
 LOCK = '\tlock, err := recoveryLock(ctx, root)\n\tif err != nil {\n\t\treturn err\n\t}\n\tdefer lock.Close()\n'
 
 # Each model mutant has a real-code mutant that the Go tests must reject.
-# (name, model flag, source edit (old, new, count) on PRODUCTION, Go test, expected failure text)
+# (name, model flag, invariant it must violate, source edit (old, new, count) on PRODUCTION,
+#  Go test, expected failure text)
 MUTANTS = [
     # LOCK guards Write and remove; the first occurrence is Write's.
-    ('lock', 'BrokenLock', (LOCK, '', 2),
+    ('lock', 'BrokenLock', 'NoUnreviewedLoss', (LOCK, '', 2),
      'TestConcurrentSessionRecoveryWrites', 'one unreviewed draft was overwritten'),
-    ('claim', 'BrokenClaim',
+    ('claim', 'BrokenClaim', 'NoUnreviewedLoss',
      ('(plan.claim == nil || plan.claim.Path != r.Path || previous != *plan.claim)',
       '(plan.claim == nil || plan.claim.Path != r.Path)', 1),
      'TestStaleRecoveryClaimCannotReplaceNewerDraft', 'stale claim replaced a newer unreviewed draft'),
-    ('discard', 'BrokenDiscard',
+    ('discard', 'BrokenDiscard', 'NoUnreviewedLoss',
      ('(approved == nil || approved.Path != path || r != *approved)',
       '(approved == nil || approved.Path != path)', 1),
      'TestPreviousSessionDraftRequiresReview', 'stale discard approval deleted a newer copy'),
+    ('cleanup', 'BrokenCleanup', 'NoLiveTempDeleted',
+     ('if lock != nil && strings.HasPrefix(entry.Name(), recoveryTempPrefix)',
+      'if strings.HasPrefix(entry.Name(), recoveryTempPrefix)', 1),
+     'TestListRemovesOnlyOrphanedRecoveryTemps', 'List removed a temp file while another session held the lock'),
 ]
 
 
@@ -45,7 +50,7 @@ def tlc_jar():
     return jar
 
 
-def check_model(jar, out, name, flag):
+def check_model(jar, out, name, flag, invariant=None):
     source = (ROOT / 'verification/recovery/Recovery.tla').read_text()
     config = (ROOT / 'verification/recovery/Recovery.cfg').read_text()
     with tempfile.TemporaryDirectory(prefix='wondervision-recovery-model-') as scratch:
@@ -54,16 +59,21 @@ def check_model(jar, out, name, flag):
         if flag:
             assert config.count(flag + ' = FALSE') == 1, 'model flag missing: ' + flag
             config = config.replace(flag + ' = FALSE', flag + ' = TRUE')
+            # Check only the invariant this mutant targets: TLC reports the first
+            # violation it reaches, which could otherwise be a different one.
+            lines = [l for l in config.splitlines() if l.startswith('INVARIANTS ')]
+            assert len(lines) == 1 and invariant in lines[0].split(), 'unknown invariant ' + invariant
+            config = config.replace(lines[0], 'INVARIANTS ' + invariant)
         (work / 'Recovery.cfg').write_text(config)
         result = run(['java', '-XX:+UseParallelGC', '-cp', str(jar), 'tlc2.TLC', '-workers', '1',
                       '-metadir', str(work / 'states'), 'Recovery.tla', '-config', 'Recovery.cfg'], work)
     (out / ('model-' + name + '.txt')).write_text(result.stdout)
     if flag:
-        assert result.returncode != 0 and 'Invariant NoUnreviewedLoss is violated' in result.stdout, \
+        assert result.returncode != 0 and ('Invariant ' + invariant + ' is violated') in result.stdout, \
             'model mutant ' + name + ' failed for an unexpected reason:\n' + result.stdout
-        return 'model-' + name + ': counterexample found for NoUnreviewedLoss'
+        return 'model-' + name + ': counterexample found for ' + invariant
     assert result.returncode == 0 and 'No error has been found' in result.stdout, result.stdout
-    return 'model-baseline: ' + next(l for l in result.stdout.splitlines() if 'distinct states found' in l)
+    return 'model-baseline: ' + [l for l in result.stdout.splitlines() if 'distinct states found' in l][-1]
 
 
 def check_code_mutant(out, name, edit, test, failure):
@@ -96,11 +106,11 @@ def main():
     assert baseline.returncode == 0, 'internal/documents tests fail on the current code:\n' + baseline.stdout
     jar = tlc_jar()
     summaries = ['code-baseline: internal/documents tests pass', check_model(jar, out, 'baseline', None)]
-    for name, flag, edit, test, failure in MUTANTS:
-        summaries.append(check_model(jar, out, name, flag))
+    for name, flag, invariant, edit, test, failure in MUTANTS:
+        summaries.append(check_model(jar, out, name, flag, invariant))
         summaries.append(check_code_mutant(out, name, edit, test, failure))
-    report = '\n'.join(summaries) + ('\nVERIFIED: no unreviewed draft is replaced or deleted, for two sessions '
-                                     'and up to 10 steps including crashes; each model mutant is rejected in real code.\n')
+    report = '\n'.join(summaries) + ('\nVERIFIED: no unreviewed draft is replaced or deleted and no in-progress temp file is cleaned up, '
+                                     'for two sessions and up to 15 steps including crashes; each model mutant is rejected in real code.\n')
     (out / 'summary.txt').write_text(report)
     print(report)
 

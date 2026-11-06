@@ -218,6 +218,10 @@ func (a *App) refreshExplorer() {
 	if a.workspace == nil {
 		return
 	}
+	// The tree changed: Quick Open's cached paths are stale too.
+	if a.files != nil {
+		a.files.Invalidate()
+	}
 	w, epoch, ctx := a.workspace, a.epoch, a.wsCtx
 	a.enqueue(func() func() {
 		entries, err := w.List(ctx, w.Root)

@@ -103,8 +103,9 @@ func (a *App) followLink(d *documents.Document, raw string) {
 	}
 	// Resolve symlinks on the I/O worker, not in the link's UI callback.
 	id, epoch := a.openID, a.epoch
+	area, document := d.Area, d.Path
 	a.enqueue(func() func() {
-		path, anchor, err := workspace.ResolveLocal(d.Area, d.Path, raw)
+		path, anchor, err := workspace.ResolveLocal(area, document, raw)
 		return func() {
 			if a.active() != d || id != a.openID || epoch != a.epoch {
 				return
@@ -118,7 +119,7 @@ func (a *App) followLink(d *documents.Document, raw string) {
 				a.notify(errors.New("preview links open Markdown files only"))
 				return
 			}
-			a.openFile(path, d.Area, anchor)
+			a.openFile(path, area, anchor)
 		}
 	})
 }

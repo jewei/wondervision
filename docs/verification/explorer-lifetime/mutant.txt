@@ -1,0 +1,8 @@
+=== RUN   TestExplorerRefreshKeepsRenderedStateAliveUntilNextFrame
+=== RUN   TestExplorerRefreshKeepsRenderedStateAliveUntilNextFrame/reopen
+    open_test.go:72: refresh invalidated the still-rendered Explorer state
+--- FAIL: TestExplorerRefreshKeepsRenderedStateAliveUntilNextFrame (0.05s)
+    --- FAIL: TestExplorerRefreshKeepsRenderedStateAliveUntilNextFrame/reopen (0.05s)
+FAIL
+FAIL	github.com/jewei/wondervision/internal/app	0.052s
+FAIL

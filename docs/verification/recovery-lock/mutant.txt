@@ -1,0 +1,6 @@
+=== RUN   TestConcurrentSessionRecoveryWrites
+    recovery_concurrency_test.go:74: both sessions wrote successfully to one path; one unreviewed draft was overwritten
+--- FAIL: TestConcurrentSessionRecoveryWrites (0.01s)
+FAIL
+FAIL	github.com/jewei/wondervision/internal/documents	0.016s
+FAIL

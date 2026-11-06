@@ -1,0 +1,22 @@
+---
+title: "WonderVision save protocol"
+---
+stateDiagram-v2
+  state "Legend" as legend {
+    lg0: Breaks ExpectedIsReviewed
+    lg1: Path to the ExpectedIsReviewed bug
+  }
+  class lg0 breaks
+  class lg1 bugPath
+  s0: Ready for edits or saving
+  s1: Reviewing overwrite
+  s2: Overwrite approval changed without review
+  [*] --> s0
+  s0 --> s1: you review the observed disk version
+  s1 --> s1: another process writes the file
+  s1 --> s2: you approve that version
+  classDef breaks fill:#ffecee,stroke:#e72e3b,stroke-width:2.5px,color:#cd2834
+  class s0 bugPath
+  class s1 bugPath
+  class s2 breaks
+  class s2 bugPath

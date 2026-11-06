@@ -1,0 +1,6 @@
+=== RUN   TestSaveRejectsKnownConflict
+    save_test.go:107: known external change was not blocked: <nil>
+--- FAIL: TestSaveRejectsKnownConflict (0.01s)
+FAIL
+FAIL	github.com/jewei/wondervision/internal/documents	0.011s
+FAIL

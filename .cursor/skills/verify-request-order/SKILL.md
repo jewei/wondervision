@@ -25,7 +25,7 @@ mutates the working tree. Proof survives under `build/verification/request-order
 
 ## Coverage and limits
 
-Last confirmed code commit: `b8d8baf338dc137afd343c83f070f82da0b188af`.
+Last confirmed code commit: `31bc6b0170df557053e92fc393549bf2bdb265f6`.
 
 | Production code | Check |
 | --- | --- |
@@ -47,8 +47,9 @@ callback are indivisible on one UI thread; each callback is delivered once. I/O
 can complete before cancellation while its UI callback is still pending. The
 check explicitly includes that ordering.
 
-There is no formal verifier configured for this Go project. This is exhaustive
-bounded testing of actual code, not a theorem, TLA+ model, or unbounded proof.
+This check uses exhaustive bounded testing of actual code, not a theorem, TLA+
+model, or unbounded proof. The separate `verify-save-protocol` skill covers a
+finite TLA+ save model; it does not extend these request-order bounds.
 It omits unbounded request counts, operating-system scheduling inside a read,
 framework correctness, I/O errors, queue saturation, and full mixed-operation
 schedule exploration. Mixed folder/file and shutdown cases have named examples,

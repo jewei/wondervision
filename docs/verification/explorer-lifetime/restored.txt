@@ -1,0 +1,8 @@
+=== RUN   TestExplorerRefreshKeepsRenderedStateAliveUntilNextFrame
+=== RUN   TestExplorerRefreshKeepsRenderedStateAliveUntilNextFrame/reopen
+=== RUN   TestExplorerRefreshKeepsRenderedStateAliveUntilNextFrame/refresh
+--- PASS: TestExplorerRefreshKeepsRenderedStateAliveUntilNextFrame (0.04s)
+    --- PASS: TestExplorerRefreshKeepsRenderedStateAliveUntilNextFrame/reopen (0.04s)
+    --- PASS: TestExplorerRefreshKeepsRenderedStateAliveUntilNextFrame/refresh (0.00s)
+PASS
+ok  	github.com/jewei/wondervision/internal/app	0.049s

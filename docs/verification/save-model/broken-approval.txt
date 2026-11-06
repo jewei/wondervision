@@ -1,0 +1,98 @@
+TLC2 Version 2026.11.06.100558 (rev: 3ec1cc4)
+Running breadth-first search Model-Checking with fp 71 and seed 1971124204315008836 with 1 worker on 2 cores with 1820MB heap and 64MB offheap memory [pid: 13251] (Linux 6.18.57 amd64, Debian 21.0.13 64bit, MSBDiskFPSet, DiskStateQueue).
+Parsing file /tmp/wondervision-save-model-flui6n3w/Save.tla
+Parsing file /tmp/tlc-5359939935620914414/Naturals.tla (jar:file:/workspace/wondervision/build/tools/tla2tools-1.8.0.jar!/tla2sany/StandardModules/Naturals.tla)
+Parsing file /tmp/tlc-5359939935620914414/_TLCTrace.tla (jar:file:/workspace/wondervision/build/tools/tla2tools-1.8.0.jar!/tla2sany/StandardModules/_TLCTrace.tla)
+Parsing file /tmp/tlc-5359939935620914414/TLC.tla (jar:file:/workspace/wondervision/build/tools/tla2tools-1.8.0.jar!/tla2sany/StandardModules/TLC.tla)
+Parsing file /tmp/tlc-5359939935620914414/TLCExt.tla (jar:file:/workspace/wondervision/build/tools/tla2tools-1.8.0.jar!/tla2sany/StandardModules/TLCExt.tla)
+Parsing file /tmp/tlc-5359939935620914414/Sequences.tla (jar:file:/workspace/wondervision/build/tools/tla2tools-1.8.0.jar!/tla2sany/StandardModules/Sequences.tla)
+Parsing file /tmp/tlc-5359939935620914414/FiniteSets.tla (jar:file:/workspace/wondervision/build/tools/tla2tools-1.8.0.jar!/tla2sany/StandardModules/FiniteSets.tla)
+Parsing file /tmp/tlc-5359939935620914414/Integers.tla (jar:file:/workspace/wondervision/build/tools/tla2tools-1.8.0.jar!/tla2sany/StandardModules/Integers.tla)
+Semantic processing of module Naturals
+Semantic processing of module Sequences
+Semantic processing of module FiniteSets
+Semantic processing of module TLC
+Semantic processing of module Integers
+Semantic processing of module TLCExt
+Semantic processing of module _TLCTrace
+Semantic processing of module Save
+Linting of module TLCExt
+Linting of module _TLCTrace
+Linting of module Save
+Starting... (2026-11-06 12:48:59)
+Computing initial states...
+Finished computing initial states: 1 distinct state generated at 2026-11-06 12:48:59.
+Error: Invariant ExpectedIsReviewed is violated.
+Error: The behavior up to this point is:
+State 1: <Initial predicate>
+/\ source = 0
+/\ lastSavedSource = 0
+/\ checked = 0
+/\ racedWrite = FALSE
+/\ current = 0
+/\ steps = 0
+/\ before = 0
+/\ phase = "idle"
+/\ accepted = 0
+/\ saved = 0
+/\ success = FALSE
+/\ approval = 0
+/\ expected = 0
+/\ disk = 0
+/\ unsafeWrite = FALSE
+
+State 2: <PromptOverwrite line 27, col 20 to line 30, col 117 of module Save>
+/\ source = 0
+/\ lastSavedSource = 0
+/\ checked = 0
+/\ racedWrite = FALSE
+/\ current = 0
+/\ steps = 1
+/\ before = 0
+/\ phase = "confirming"
+/\ accepted = 0
+/\ saved = 0
+/\ success = FALSE
+/\ approval = 0
+/\ expected = 0
+/\ disk = 0
+/\ unsafeWrite = FALSE
+
+State 3: <OutsideWrite line 18, col 17 to line 22, col 85 of module Save>
+/\ source = 0
+/\ lastSavedSource = 0
+/\ checked = 0
+/\ racedWrite = FALSE
+/\ current = 0
+/\ steps = 2
+/\ before = 0
+/\ phase = "confirming"
+/\ accepted = 0
+/\ saved = 0
+/\ success = FALSE
+/\ approval = 0
+/\ expected = 0
+/\ disk = 1
+/\ unsafeWrite = FALSE
+
+State 4: <ConfirmOverwrite line 31, col 21 to line 34, col 142 of module Save>
+/\ source = 0
+/\ lastSavedSource = 0
+/\ checked = 0
+/\ racedWrite = FALSE
+/\ current = 0
+/\ steps = 3
+/\ before = 0
+/\ phase = "reading"
+/\ accepted = 0
+/\ saved = 0
+/\ success = FALSE
+/\ approval = 0
+/\ expected = 1
+/\ disk = 1
+/\ unsafeWrite = FALSE
+
+183 states generated, 116 distinct states found, 84 states left on queue.
+The depth of the complete state graph search is 4.
+Finished in 01s at (2026-11-06 12:48:59)
+Trace exploration spec path: ./Save_TTrace_1793969338.tla

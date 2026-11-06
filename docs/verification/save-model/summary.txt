@@ -1,0 +1,9 @@
+40212 states generated, 10180 distinct states found, 0 states left on queue.
+broken-clean: counterexample found for NoFalseClean
+broken-conflict: counterexample found for KnownConflictsNeverWritten
+broken-approval: counterexample found for ExpectedIsReviewed
+final-window-limit: counterexample found for NoRacedOverwrite
+real-code-clean: behavioral counterexample reproduced
+real-code-approval: behavioral counterexample reproduced
+real-code-conflict: behavioral counterexample reproduced
+VERIFIED within the finite model and replay scope. The final filesystem replace window is a reproduced limitation.

@@ -1,0 +1,46 @@
+=== RUN   TestSavePreservesTextFormatAndPermissions
+=== RUN   TestSavePreservesTextFormatAndPermissions/_UTF8no-final
+=== RUN   TestSavePreservesTextFormatAndPermissions/_UTF8final
+=== RUN   TestSavePreservesTextFormatAndPermissions/_BOMno-final
+=== RUN   TestSavePreservesTextFormatAndPermissions/_BOMfinal
+=== RUN   TestSavePreservesTextFormatAndPermissions/__UTF8no-final
+=== RUN   TestSavePreservesTextFormatAndPermissions/__UTF8final
+=== RUN   TestSavePreservesTextFormatAndPermissions/__BOMno-final
+=== RUN   TestSavePreservesTextFormatAndPermissions/__BOMfinal
+--- PASS: TestSavePreservesTextFormatAndPermissions (0.05s)
+    --- PASS: TestSavePreservesTextFormatAndPermissions/_UTF8no-final (0.01s)
+    --- PASS: TestSavePreservesTextFormatAndPermissions/_UTF8final (0.01s)
+    --- PASS: TestSavePreservesTextFormatAndPermissions/_BOMno-final (0.01s)
+    --- PASS: TestSavePreservesTextFormatAndPermissions/_BOMfinal (0.01s)
+    --- PASS: TestSavePreservesTextFormatAndPermissions/__UTF8no-final (0.01s)
+    --- PASS: TestSavePreservesTextFormatAndPermissions/__UTF8final (0.00s)
+    --- PASS: TestSavePreservesTextFormatAndPermissions/__BOMno-final (0.01s)
+    --- PASS: TestSavePreservesTextFormatAndPermissions/__BOMfinal (0.00s)
+=== RUN   TestSaveKeepsNewerEditsDirty
+--- PASS: TestSaveKeepsNewerEditsDirty (0.00s)
+=== RUN   TestSaveRejectsKnownConflict
+--- PASS: TestSaveRejectsKnownConflict (0.00s)
+=== RUN   TestSaveFailureKeepsOriginal
+=== RUN   TestSaveFailureKeepsOriginal/read-only-file
+=== RUN   TestSaveFailureKeepsOriginal/read-only-directory
+=== RUN   TestSaveFailureKeepsOriginal/cancelled
+--- PASS: TestSaveFailureKeepsOriginal (0.00s)
+    --- PASS: TestSaveFailureKeepsOriginal/read-only-file (0.00s)
+    --- PASS: TestSaveFailureKeepsOriginal/read-only-directory (0.00s)
+    --- PASS: TestSaveFailureKeepsOriginal/cancelled (0.00s)
+=== RUN   TestSaveAsNeverOverwritesAndRejectsSymlink
+--- PASS: TestSaveAsNeverOverwritesAndRejectsSymlink (0.00s)
+=== RUN   TestSaveRejectsParentSymlinkEscape
+--- PASS: TestSaveRejectsParentSymlinkEscape (0.00s)
+=== RUN   TestFinalReplaceWindowIsNotCompareAndSwap
+--- PASS: TestFinalReplaceWindowIsNotCompareAndSwap (0.00s)
+PASS
+ok  	github.com/jewei/wondervision/internal/documents	0.085s
+=== RUN   TestOverwriteApprovalDoesNotFollowNewWatcherVersion
+--- PASS: TestOverwriteApprovalDoesNotFollowNewWatcherVersion (0.01s)
+=== RUN   TestSaveAsConfirmationAndOpenTabCollision
+--- PASS: TestSaveAsConfirmationAndOpenTabCollision (0.01s)
+=== RUN   TestDiscardApprovalDoesNotCoverFutureEdits
+--- PASS: TestDiscardApprovalDoesNotCoverFutureEdits (0.01s)
+PASS
+ok  	github.com/jewei/wondervision/internal/app	0.040s

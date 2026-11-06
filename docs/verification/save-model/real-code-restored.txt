@@ -1,0 +1,2 @@
+ok  	github.com/jewei/wondervision/internal/documents	0.218s
+ok  	github.com/jewei/wondervision/internal/app	0.301s

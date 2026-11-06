@@ -1,0 +1,28 @@
+---
+title: "WonderVision save protocol"
+---
+stateDiagram-v2
+  state "Legend" as legend {
+    lg0: Breaks KnownConflictsNeverWritten
+    lg1: Path to the KnownConflictsNeverWritten bug
+  }
+  class lg0 breaks
+  class lg1 bugPath
+  s0: Ready for edits or saving
+  s1: Checking expected disk content
+  s2: Writing the captured snapshot to a temporary file
+  s3: Final disk check passed
+  s4: Known disk conflict was overwritten
+  [*] --> s0
+  s0 --> s0: another process writes the file
+  s0 --> s1: you save a captured snapshot
+  s1 --> s2: the first disk check finishes
+  s2 --> s3: the final disk check finishes
+  s3 --> s4: the snapshot replaces the file
+  classDef breaks fill:#ffecee,stroke:#e72e3b,stroke-width:2.5px,color:#cd2834
+  class s0 bugPath
+  class s1 bugPath
+  class s2 bugPath
+  class s3 bugPath
+  class s4 breaks
+  class s4 bugPath

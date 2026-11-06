@@ -1,0 +1,149 @@
+TLC2 Version 2026.11.06.100558 (rev: 3ec1cc4)
+Running breadth-first search Model-Checking with fp 121 and seed -7756238742959899027 with 1 worker on 2 cores with 1820MB heap and 64MB offheap memory [pid: 13205] (Linux 6.18.57 amd64, Debian 21.0.13 64bit, MSBDiskFPSet, DiskStateQueue).
+Parsing file /tmp/wondervision-save-model-13uwclvm/Save.tla
+Parsing file /tmp/tlc-2667174127792824934/Naturals.tla (jar:file:/workspace/wondervision/build/tools/tla2tools-1.8.0.jar!/tla2sany/StandardModules/Naturals.tla)
+Parsing file /tmp/tlc-2667174127792824934/_TLCTrace.tla (jar:file:/workspace/wondervision/build/tools/tla2tools-1.8.0.jar!/tla2sany/StandardModules/_TLCTrace.tla)
+Parsing file /tmp/tlc-2667174127792824934/TLC.tla (jar:file:/workspace/wondervision/build/tools/tla2tools-1.8.0.jar!/tla2sany/StandardModules/TLC.tla)
+Parsing file /tmp/tlc-2667174127792824934/TLCExt.tla (jar:file:/workspace/wondervision/build/tools/tla2tools-1.8.0.jar!/tla2sany/StandardModules/TLCExt.tla)
+Parsing file /tmp/tlc-2667174127792824934/Sequences.tla (jar:file:/workspace/wondervision/build/tools/tla2tools-1.8.0.jar!/tla2sany/StandardModules/Sequences.tla)
+Parsing file /tmp/tlc-2667174127792824934/FiniteSets.tla (jar:file:/workspace/wondervision/build/tools/tla2tools-1.8.0.jar!/tla2sany/StandardModules/FiniteSets.tla)
+Parsing file /tmp/tlc-2667174127792824934/Integers.tla (jar:file:/workspace/wondervision/build/tools/tla2tools-1.8.0.jar!/tla2sany/StandardModules/Integers.tla)
+Semantic processing of module Naturals
+Semantic processing of module Sequences
+Semantic processing of module FiniteSets
+Semantic processing of module TLC
+Semantic processing of module Integers
+Semantic processing of module TLCExt
+Semantic processing of module _TLCTrace
+Semantic processing of module Save
+Linting of module TLCExt
+Linting of module _TLCTrace
+Linting of module Save
+Starting... (2026-11-06 12:48:55)
+Computing initial states...
+Finished computing initial states: 1 distinct state generated at 2026-11-06 12:48:56.
+Error: Invariant NoFalseClean is violated.
+Error: The behavior up to this point is:
+State 1: <Initial predicate>
+/\ source = 0
+/\ lastSavedSource = 0
+/\ checked = 0
+/\ racedWrite = FALSE
+/\ current = 0
+/\ steps = 0
+/\ before = 0
+/\ phase = "idle"
+/\ accepted = 0
+/\ saved = 0
+/\ success = FALSE
+/\ approval = 0
+/\ expected = 0
+/\ disk = 0
+/\ unsafeWrite = FALSE
+
+State 2: <BeginSave line 23, col 14 to line 26, col 111 of module Save>
+/\ source = 0
+/\ lastSavedSource = 0
+/\ checked = 0
+/\ racedWrite = FALSE
+/\ current = 0
+/\ steps = 1
+/\ before = 0
+/\ phase = "reading"
+/\ accepted = 0
+/\ saved = 0
+/\ success = FALSE
+/\ approval = 0
+/\ expected = 0
+/\ disk = 0
+/\ unsafeWrite = FALSE
+
+State 3: <Edit line 13, col 9 to line 17, col 77 of module Save>
+/\ source = 0
+/\ lastSavedSource = 0
+/\ checked = 0
+/\ racedWrite = FALSE
+/\ current = 1
+/\ steps = 2
+/\ before = 0
+/\ phase = "reading"
+/\ accepted = 0
+/\ saved = 0
+/\ success = FALSE
+/\ approval = 0
+/\ expected = 0
+/\ disk = 0
+/\ unsafeWrite = FALSE
+
+State 4: <InspectDisk line 38, col 16 to line 42, col 139 of module Save>
+/\ source = 0
+/\ lastSavedSource = 0
+/\ checked = 0
+/\ racedWrite = FALSE
+/\ current = 1
+/\ steps = 3
+/\ before = 0
+/\ phase = "writing"
+/\ accepted = 0
+/\ saved = 0
+/\ success = FALSE
+/\ approval = 0
+/\ expected = 0
+/\ disk = 0
+/\ unsafeWrite = FALSE
+
+State 5: <Validate line 43, col 13 to line 47, col 135 of module Save>
+/\ source = 0
+/\ lastSavedSource = 0
+/\ checked = 0
+/\ racedWrite = FALSE
+/\ current = 1
+/\ steps = 4
+/\ before = 0
+/\ phase = "validated"
+/\ accepted = 0
+/\ saved = 0
+/\ success = FALSE
+/\ approval = 0
+/\ expected = 0
+/\ disk = 0
+/\ unsafeWrite = FALSE
+
+State 6: <Replace line 48, col 12 to line 53, col 106 of module Save>
+/\ source = 0
+/\ lastSavedSource = 0
+/\ checked = 0
+/\ racedWrite = FALSE
+/\ current = 1
+/\ steps = 5
+/\ before = 0
+/\ phase = "completed"
+/\ accepted = 0
+/\ saved = 0
+/\ success = TRUE
+/\ approval = 0
+/\ expected = 0
+/\ disk = 0
+/\ unsafeWrite = FALSE
+
+State 7: <Acknowledge line 57, col 16 to line 62, col 115 of module Save>
+/\ source = 0
+/\ lastSavedSource = 0
+/\ checked = 0
+/\ racedWrite = FALSE
+/\ current = 1
+/\ steps = 6
+/\ before = 0
+/\ phase = "idle"
+/\ accepted = 0
+/\ saved = 1
+/\ success = TRUE
+/\ approval = 0
+/\ expected = 0
+/\ disk = 0
+/\ unsafeWrite = FALSE
+
+3965 states generated, 1357 distinct states found, 654 states left on queue.
+The depth of the complete state graph search is 7.
+Finished in 01s at (2026-11-06 12:48:56)
+Trace exploration spec path: ./Save_TTrace_1793969335.tla

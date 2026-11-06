@@ -27,6 +27,9 @@ func (a *App) view(c *ui.Context) {
 			ui.Text(c, "WonderVision").Bold()
 			ui.MenuButton(c, "File", a.fileMenu)
 			ui.Text(c, a.title()).Grow(1).SingleLine().TextColor(t.TextMuted)
+			if len(a.recoveries) > 0 {
+				ui.Button(c, "Recover drafts").OnClick(func() { a.recoveryPanel = true })
+			}
 			ui.Button(c, "Save").Disabled(a.active() == nil || (a.active() != nil && a.active().Saving())).OnClick(func() { a.saveDocument(a.active(), nil) })
 			ui.Button(c, "Open File").Disabled(a.restoring || a.dialogOpen).OnClick(func() { a.choose(false) })
 			ui.Button(c, "Open Folder").Disabled(a.restoring || a.dialogOpen).OnClick(func() { a.choose(true) })
@@ -74,6 +77,9 @@ func (a *App) view(c *ui.Context) {
 				if d.Saving() {
 					state = "Saving…"
 				}
+				if documents.Sensitive(d.Path) {
+					state += " · Recovery off"
+				}
 				newline := "LF"
 				if d.Buffer.LineEnding() == "\r\n" {
 					newline = "CRLF"
@@ -88,6 +94,7 @@ func (a *App) view(c *ui.Context) {
 		})
 	})
 	a.editingDialogs(c)
+	a.observeEdits()
 }
 
 func (a *App) explorer(c *ui.Context) {

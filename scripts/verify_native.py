@@ -246,7 +246,7 @@ def run(binary, out):
     original = {str(p.relative_to(root)): hashlib.sha256(p.read_bytes()).hexdigest() for p in root.rglob('*') if p.is_file()}
     env = os.environ.copy()
     env['NO_AT_BRIDGE'] = '0'
-    env.update(XDG_CONFIG_HOME=str(scratch / 'config'), MYGO_AUTOMATION=str(scratch / 'app.sock'))
+    env.update(XDG_CONFIG_HOME=str(scratch / 'config'), XDG_CACHE_HOME=str(scratch / 'cache'), MYGO_AUTOMATION=str(scratch / 'app.sock'))
     proc = None
     log = (out / 'app.log').open('w')
     results = []

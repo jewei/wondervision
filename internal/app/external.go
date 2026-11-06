@@ -33,6 +33,9 @@ func (a *App) startWatch(d *documents.Document) {
 			return
 		}
 		defer watch.Close()
+		a.post(func() {
+			a.watchHint(d, path, ctx)
+		})
 		for {
 			_, err := watch.Next(ctx)
 			if err != nil {
@@ -186,29 +189,42 @@ func (a *App) compareDisk(d *documents.Document) {
 	})
 }
 
+type overwriteRequest struct {
+	doc      *documents.Document
+	path     string
+	version  uint64
+	expected documents.Fingerprint
+}
+
 func (a *App) requestOverwrite(d *documents.Document) {
 	if d == nil || d.Saving() {
 		return
 	}
-	if _, known := a.external[d]; !known {
+	disk, known := a.external[d]
+	if !known {
 		a.checkDisk(d)
 		return
 	}
-	a.overwriteDoc = d
+	a.pendingOverwrite = &overwriteRequest{d, d.Path, d.Buffer.Version(), disk.Fingerprint}
 	a.askOverwrite = true
 }
 
-func (a *App) overwriteDocument(d *documents.Document) {
-	disk, known := a.external[d]
-	if !known || !a.hasDocument(d) {
+func (a *App) confirmOverwrite() {
+	r := a.pendingOverwrite
+	a.pendingOverwrite = nil
+	if r == nil || !a.hasDocument(r.doc) {
 		return
 	}
-	plan, err := d.PrepareOverwrite(disk.Fingerprint)
+	if r.doc.Path != r.path || r.doc.Buffer.Version() != r.version {
+		a.notify(errors.New("the buffer changed while confirming; review it before overwriting"))
+		return
+	}
+	plan, err := r.doc.PrepareOverwrite(r.expected)
 	if err != nil {
 		a.notify(err)
 		return
 	}
-	a.writeSave(d, plan, nil)
+	a.writeSave(r.doc, plan, nil)
 }
 
 func (a *App) showDiskComparison(c *ui.Context) {
@@ -222,5 +238,11 @@ func (a *App) showDiskComparison(c *ui.Context) {
 	if !a.compareOpen {
 		a.compareDoc = nil
 		a.compareEditor = nil
+	}
+}
+
+func (a *App) watchHint(d *documents.Document, path string, ctx context.Context) {
+	if !a.closed && ctx.Err() == nil && a.hasDocument(d) && d.Path == path {
+		a.checkDisk(d)
 	}
 }

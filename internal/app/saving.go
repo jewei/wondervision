@@ -78,6 +78,7 @@ func (a *App) writeSave(d *documents.Document, plan documents.SavePlan, after fu
 			if oldPath != d.Path {
 				a.releasePreview()
 			}
+			a.recoverySaved(d, oldPath)
 			delete(a.external, d)
 			if oldPath != d.Path {
 				a.stopWatch(d)
@@ -212,6 +213,7 @@ func (a *App) requestClose(d *documents.Document) {
 func (a *App) removeDocument(d *documents.Document) {
 	for i, open := range a.docs {
 		if open == d {
+			a.discardRecovery(d)
 			a.stopWatch(d)
 			delete(a.external, d)
 			delete(a.checking, d)
@@ -246,7 +248,6 @@ func (a *App) saveAndQuit() {
 			return
 		}
 	}
-	a.allowQuit = true
 	if !a.deferQuit() && a.finishQuit != nil {
 		a.finishQuit()
 	}

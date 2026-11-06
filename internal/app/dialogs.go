@@ -10,7 +10,7 @@ import (
 func (a *App) editingDialogs(c *ui.Context) {
 	switch ui.AlertDialog(c, &a.askQuit, "Discard unsaved edits?", "Save your changes before closing WonderVision.", "Discard and Quit", "Keep Editing", "Save and Quit") {
 	case 0:
-		a.allowQuit = true
+		a.approveDiscardQuit()
 		if !a.deferQuit() {
 			if a.finishQuit != nil {
 				a.finishQuit()
@@ -50,14 +50,14 @@ func (a *App) editingDialogs(c *ui.Context) {
 			a.reloadDocument(d)
 		}
 	}
-	if d := a.overwriteDoc; d != nil {
+	if r := a.pendingOverwrite; r != nil {
 		switch ui.AlertDialog(c, &a.askOverwrite, "Overwrite disk changes?", "Replace the last observed disk version with this buffer. A newer disk change will still block the save.", "Cancel", "Overwrite Disk") {
 		case 0, ui.AlertDismissed:
-			a.overwriteDoc = nil
+			a.pendingOverwrite = nil
 		case 1:
-			a.overwriteDoc = nil
-			a.overwriteDocument(d)
+			a.confirmOverwrite()
 		}
 	}
 	a.showDiskComparison(c)
+	a.showRecoveryPanel(c)
 }

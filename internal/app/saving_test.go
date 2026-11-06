@@ -86,3 +86,26 @@ func TestSaveAsConfirmationAndOpenTabCollision(t *testing.T) {
 		t.Fatal("Save As accepted another editable session's path")
 	}
 }
+
+func TestDiscardApprovalDoesNotCoverFutureEdits(t *testing.T) {
+	a := newApp()
+	defer a.cancel()
+	root := fixture(t)
+	a.openFile(filepath.Join(root, "todo.md"), root, "")
+	drain(t, a)
+	d := a.active()
+	d.Buffer.Set("approved draft")
+	a.prefsPath = filepath.Join(t.TempDir(), "preferences.json")
+	a.remember()
+	a.approveDiscardQuit()
+	finished := false
+	a.finishQuit = func() { finished = true }
+	if !a.deferQuit() {
+		t.Fatal("quit should await preferences")
+	}
+	d.Buffer.Set("unapproved later edit")
+	drain(t, a)
+	if finished || !a.askQuit || a.allowQuit {
+		t.Fatal("discard approval silently discarded a later edit")
+	}
+}

@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"os"
 	"path/filepath"
+	"time"
 
 	"github.com/egoist/mygo"
 	"github.com/egoist/mygo/ui"
@@ -25,61 +26,69 @@ type directory struct {
 // All model fields belong to the UI thread. A single event-driven worker
 // performs file I/O and returns a closure to Window.Update. No idle polling.
 type App struct {
-	win           *mygo.Window
-	ctx           context.Context
-	cancel        context.CancelFunc
-	jobs          chan func() func()
-	post          func(func())
-	closed        bool
-	err           string
-	prefs         preferences.State
-	prefsPath     string
-	prefsSaving   bool
-	restoring     bool
-	dialogOpen    bool
-	workspace     *workspace.Workspace
-	dirs          map[string]*directory
-	outline       ui.OutlineState[workspace.Entry]
-	row           int
-	wsCtx         context.Context
-	wsCancel      context.CancelFunc
-	epoch         uint64
-	folderID      uint64
-	folderCancel  context.CancelFunc
-	folderLoading bool
-	openID        uint64
-	openCancel    context.CancelFunc
-	fileLoading   bool
-	openScoped    bool
-	docs          []*documents.Document
-	tab           int
-	preview       *previewState
-	scroll        map[*documents.Document]*ui.ScrollState
-	splitPercent  float32
-	askQuit       bool
-	allowQuit     bool
-	quitWhenSaved bool
-	finishQuit    func()
-	closeDoc      *documents.Document
-	askClose      bool
-	replaceSave   *replaceSaveRequest
-	askReplace    bool
-	external      map[*documents.Document]documents.DiskVersion
-	checking      map[*documents.Document]bool
-	checkAgain    map[*documents.Document]bool
-	watchCancel   map[*documents.Document]context.CancelFunc
-	askReload     bool
-	reloadDoc     *documents.Document
-	askOverwrite  bool
-	overwriteDoc  *documents.Document
-	compareOpen   bool
-	compareDoc    *documents.Document
-	compareEditor *editor.State
+	win              *mygo.Window
+	ctx              context.Context
+	cancel           context.CancelFunc
+	jobs             chan func() func()
+	post             func(func())
+	closed           bool
+	err              string
+	prefs            preferences.State
+	prefsPath        string
+	prefsSaving      bool
+	restoring        bool
+	dialogOpen       bool
+	workspace        *workspace.Workspace
+	dirs             map[string]*directory
+	outline          ui.OutlineState[workspace.Entry]
+	row              int
+	wsCtx            context.Context
+	wsCancel         context.CancelFunc
+	epoch            uint64
+	folderID         uint64
+	folderCancel     context.CancelFunc
+	folderLoading    bool
+	openID           uint64
+	openCancel       context.CancelFunc
+	fileLoading      bool
+	openScoped       bool
+	docs             []*documents.Document
+	tab              int
+	preview          *previewState
+	scroll           map[*documents.Document]*ui.ScrollState
+	splitPercent     float32
+	askQuit          bool
+	allowQuit        bool
+	quitApproval     map[*documents.Document]uint64
+	pendingWrites    int
+	recoveryStore    *documents.RecoveryStore
+	recoveryDelay    time.Duration
+	recoveryEntries  map[*documents.Document]*recoveryEntry
+	recoveries       []documents.RecoveryRecord
+	recoveryPanel    bool
+	quitWhenSaved    bool
+	finishQuit       func()
+	closeDoc         *documents.Document
+	askClose         bool
+	replaceSave      *replaceSaveRequest
+	askReplace       bool
+	external         map[*documents.Document]documents.DiskVersion
+	checking         map[*documents.Document]bool
+	checkAgain       map[*documents.Document]bool
+	watchCancel      map[*documents.Document]context.CancelFunc
+	askReload        bool
+	reloadDoc        *documents.Document
+	askOverwrite     bool
+	pendingOverwrite *overwriteRequest
+	compareOpen      bool
+	compareDoc       *documents.Document
+	compareEditor    *editor.State
 }
 
 func newApp() *App {
 	ctx, cancel := context.WithCancel(context.Background())
 	return &App{ctx: ctx, cancel: cancel, jobs: make(chan func() func(), 32),
+		recoveryDelay: 15 * time.Second, recoveryEntries: make(map[*documents.Document]*recoveryEntry),
 		prefs:    preferences.State{MarkdownMode: int(documents.Preview), SidebarWidth: 220},
 		external: make(map[*documents.Document]documents.DiskVersion), checking: make(map[*documents.Document]bool), checkAgain: make(map[*documents.Document]bool), watchCancel: make(map[*documents.Document]context.CancelFunc),
 		dirs: make(map[string]*directory), row: -1, scroll: make(map[*documents.Document]*ui.ScrollState), splitPercent: 50}
@@ -109,6 +118,7 @@ func Run() error {
 		})
 		a.win.OnClosed(func() { a.closed = true; a.cancel() })
 		go a.work()
+		a.initializeRecovery()
 		a.restore()
 	})
 	return mygo.App.Run()
@@ -174,6 +184,7 @@ func (a *App) restore() {
 			if s.ActiveFile != "" {
 				a.openFile(s.ActiveFile, "", "")
 			}
+			a.loadRecoveries()
 		}
 	})
 }
@@ -412,7 +423,18 @@ func (a *App) openFile(path, area, anchor string) {
 
 func (a *App) needsQuitConfirmation() bool {
 	if a.allowQuit {
-		return false
+		valid := len(a.quitApproval) == len(a.docs)
+		for _, d := range a.docs {
+			version, known := a.quitApproval[d]
+			if !known || version != d.Buffer.Version() {
+				valid = false
+				break
+			}
+		}
+		if valid {
+			return false
+		}
+		a.allowQuit = false
 	}
 	for _, d := range a.docs {
 		if d.Dirty() {
@@ -427,7 +449,7 @@ func (a *App) deferQuit() bool {
 	if a.needsQuitConfirmation() {
 		return true
 	}
-	if a.anySaving() || a.prefsSaving {
+	if a.anySaving() || a.prefsSaving || a.pendingWrites > 0 {
 		a.quitWhenSaved = true
 		return true
 	}
@@ -442,7 +464,7 @@ func (a *App) title() string {
 }
 
 func (a *App) settleQuit() {
-	if !a.quitWhenSaved || a.anySaving() || a.prefsSaving {
+	if !a.quitWhenSaved || a.anySaving() || a.prefsSaving || a.pendingWrites > 0 {
 		return
 	}
 	a.quitWhenSaved = false
@@ -452,4 +474,13 @@ func (a *App) settleQuit() {
 	if a.finishQuit != nil {
 		a.finishQuit()
 	}
+}
+
+func (a *App) approveDiscardQuit() {
+	a.quitApproval = make(map[*documents.Document]uint64, len(a.docs))
+	for _, d := range a.docs {
+		a.quitApproval[d] = d.Buffer.Version()
+		a.discardRecovery(d)
+	}
+	a.allowQuit = true
 }

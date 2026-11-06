@@ -67,6 +67,7 @@ python3 scripts/verify_editing.py --out build/verification/editing-run
 python3 scripts/verify_request_order.py --mutation-check
 python3 scripts/verify_save_model.py
 python3 scripts/verify_recovery.py
+python3 scripts/verify_recovery_model.py
 ```
 
 The native driver needs an authorized X11 desktop, Python 3, libX11, libXtst,

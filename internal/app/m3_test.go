@@ -278,3 +278,32 @@ func TestFileActionsInvalidateQuickOpen(t *testing.T) {
 		t.Fatalf("Quick Open missed a file created by a file action: %v", got)
 	}
 }
+
+// Spec §5: Escape closes an overlay and returns focus to the editor.
+func TestEscapeReturnsFocusToTheEditor(t *testing.T) {
+	a := newApp()
+	t.Cleanup(a.cancel)
+	root := fixture(t)
+	a.openFolder(root)
+	drain(t, a)
+	a.openFile(filepath.Join(root, "config.yaml"), root, "")
+	drain(t, a)
+	tt := ui.NewTester(a.view, 1040, 720)
+	if err := tt.Click("Editor"); err != nil {
+		t.Fatal(err)
+	}
+	tt.Type("a")
+	if !a.active().Dirty() {
+		t.Fatal("setup: typing did not reach the editor")
+	}
+	a.active().Buffer.Set("enabled: true\n")
+	tt.Key(ui.Cmd|ui.Shift, ui.KeyP)
+	tt.Frame()
+	tt.Key(0, ui.KeyEscape)
+	tt.Frame()
+	tt.Frame()
+	tt.Type("z")
+	if got := a.active().Buffer.String(); got == "enabled: true\n" {
+		t.Fatalf("after Escape the keystroke did not reach the editor (overlay kind %d)", a.overlay.kind)
+	}
+}

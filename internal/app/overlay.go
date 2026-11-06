@@ -151,11 +151,14 @@ func (a *App) submit(field ui.Element, n int, choose func(int)) {
 	}
 }
 
-// queryField builds the focused query field and resets the selection when
-// the query changes.
+// queryField builds the query field and resets the selection when the query
+// changes. It must not use AutoFocus: the dialog already moves the focus into
+// its first field, and AutoFocus takes the focus before ui.DialogBase records
+// who had it, so Escape could no longer give it back to the editor
+// (TestEscapeReturnsFocusToTheEditor).
 func (a *App) queryField(c *ui.Context, label, placeholder string) ui.Element {
 	o := &a.overlay
-	f := ui.SearchField(c, &o.query).Label(label).Placeholder(placeholder).AutoFocus()
+	f := ui.SearchField(c, &o.query).Label(label).Placeholder(placeholder)
 	if o.query != o.shown {
 		o.shown, o.selected = o.query, 0
 		o.list.ScrollIntoView(0)
@@ -203,7 +206,7 @@ func (a *App) palette(c *ui.Context, panel ui.Element) {
 	ui.List(c, &a.overlay.list, len(entries), func(i int) {
 		cmd := commands[entries[i].id]
 		ok, why := cmd.available(a)
-		row := ui.Row(c).Padding(6, 8).Gap(12).Children(func() {
+		row := ui.Row(c).Padding(6, 20, 6, 8).Gap(12).Children(func() { // right padding clears the scrollbar
 			title := ui.Text(c, cmd.title).Grow(1)
 			if !ok {
 				title.TextColor(t.TextMuted)
@@ -361,13 +364,21 @@ func (a *App) searchView(c *ui.Context, panel ui.Element) {
 	case run.err != nil:
 		status = "Search failed: " + run.err.Error()
 	case run.running:
-		status = fmt.Sprintf("Searching… %d matches", len(hits))
+		status = "Searching… " + plural(len(hits), "match", "matches")
 	case run.sum.Truncated:
 		status = fmt.Sprintf("Showing the first %d matches; refine the search for more", len(hits))
 	case len(hits) == 0:
-		status = fmt.Sprintf("No matches in %d files", run.sum.Files)
+		status = "No matches in " + plural(run.sum.Files, "file", "files")
 	default:
-		status = fmt.Sprintf("%d matches in %d files", len(hits), run.sum.Files)
+		status = plural(len(hits), "match", "matches") + " in " + plural(run.sum.Files, "file", "files")
 	}
 	ui.Text(c, status).FontSize(12).Padding(4, 8).TextColor(t.TextMuted)
+}
+
+// plural formats n with the singular or plural noun.
+func plural(n int, one, many string) string {
+	if n == 1 {
+		return "1 " + one
+	}
+	return fmt.Sprintf("%d %s", n, many)
 }

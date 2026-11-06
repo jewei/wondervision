@@ -12,8 +12,8 @@ all old buffers or writing their drafts to disk.
 
 ## How to get to it (user POV)
 
-Switch tabs, toggle the sidebar, close the window, choose Keep Editing or Discard
-and Quit, then launch WonderVision again.
+Switch tabs, toggle the sidebar, close the window, choose Cancel or Discard in the
+quit prompt, then launch WonderVision again.
 
 ## Driving it with the native harness
 
@@ -21,8 +21,8 @@ Preconditions: the common run has unsaved report and `.env` edits.
 
 - Run `python3 scripts/verify_native.py run --out build/verification/session`.
 - The runner toggles the sidebar, verifies the tree disappears and returns,
-  requests a native window close, and selects `Keep Editing`.
-- It closes again, selects `Discard and Quit`, and starts the same binary with
+  requests a native window close, and selects `Cancel`.
+- It closes again, selects `Discard`, and starts the same binary with
   the same private profile. `restored.json` must show exactly one report tab,
   the original on-disk heading, and no expanded `next.md` Explorer row.
 - Inspect `before-quit.png`, `restored.png`, `filesystem-check.json`, and

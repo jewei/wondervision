@@ -58,8 +58,11 @@ clicks their current bounds. Native GTK dialogs receive desktop focus/keyboard i
 There are no internal model setters or file-open test endpoints.
 
 Stable names include `Open File`, `Open Folder`, `docs`, `report.md`, `Edit`,
-`Preview`, `Split`, `Editor`, `Next document`, `Keep Editing`, and
-`Discard and Quit`. File dialog readiness also requires a viewable native window.
+`Preview`, `Split`, `Editor`, and `Next document`. The quit prompt
+`Discard unsaved edits?` offers `Discard`, `Cancel` and `Save`; the toolbar also
+has a `Save`, so click dialog buttons with `Native.click_in(dialog, label)`, which
+only matches inside the dialog and fails if a button sticks out of it. File
+dialog readiness also requires a viewable native window.
 
 ## Evidence
 

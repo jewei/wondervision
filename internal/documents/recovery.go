@@ -134,6 +134,11 @@ func (store RecoveryStore) Write(ctx context.Context, plan RecoveryPlan) error {
 		return err
 	}
 	defer root.Close()
+	lock, err := recoveryLock(ctx, root)
+	if err != nil {
+		return err
+	}
+	defer lock.Close()
 	name := recoveryName(r.Path)
 	if existing, e := root.Open(name); e == nil {
 		previous, readErr := readRecoveryHeader(existing)
@@ -212,6 +217,13 @@ func (store RecoveryStore) List(ctx context.Context) ([]RecoveryRecord, error) {
 		return nil, err
 	}
 	defer root.Close()
+	lock, err := recoveryLock(ctx, root)
+	if err != nil && !errors.Is(err, ErrRecoveryBusy) {
+		return nil, err
+	}
+	if lock != nil {
+		defer lock.Close()
+	}
 	records := make([]RecoveryRecord, 0)
 	for {
 		if err = ctx.Err(); err != nil {
@@ -239,7 +251,9 @@ func (store RecoveryStore) List(ctx context.Context) ([]RecoveryRecord, error) {
 				continue
 			}
 			if Sensitive(r.Path) || (r.Base.Exists && r.BodyHash == r.Base.Hash) {
-				root.Remove(entry.Name())
+				if lock != nil {
+					root.Remove(entry.Name())
+				}
 				continue
 			}
 			records = append(records, r)
@@ -334,6 +348,11 @@ func (store RecoveryStore) remove(ctx context.Context, path string, approved *Re
 		return err
 	}
 	defer root.Close()
+	lock, err := recoveryLock(ctx, root)
+	if err != nil {
+		return err
+	}
+	defer lock.Close()
 	name := recoveryName(path)
 	f, err := root.Open(name)
 	if errors.Is(err, os.ErrNotExist) {

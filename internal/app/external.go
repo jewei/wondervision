@@ -154,6 +154,7 @@ func (a *App) reloadDocument(d *documents.Document) {
 				return
 			}
 			if d.ReloadDiscarding(disk.Document, version) {
+				a.discardRecovery(d)
 				delete(a.external, d)
 				a.releasePreview()
 			}

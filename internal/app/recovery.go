@@ -260,6 +260,8 @@ func (a *App) discardRecoveryRecord(record documents.RecoveryRecord) {
 				a.forgetRecoveryRecord(record)
 			} else {
 				a.notify(err)
+				a.allowQuit = false
+				a.quitWhenSaved = false
 			}
 			a.settleQuit()
 		}

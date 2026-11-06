@@ -1,9 +1,10 @@
-// Package documents owns the in-memory editing session. M1 never writes files.
+// Package documents owns editable buffers and their accepted disk versions.
 package documents
 
 import (
 	"bytes"
 	"context"
+	"crypto/sha256"
 	"errors"
 	"io"
 	"os"
@@ -27,16 +28,21 @@ const (
 )
 
 type Document struct {
-	Path     string
-	Area     string
-	Info     os.FileInfo
-	Buffer   *editor.Buffer
-	Editor   *editor.State
-	Markdown bool
-	Mode     Mode
-	BOM      bool
-	Large    bool
-	Anchor   string
+	Path            string
+	Area            string
+	Info            os.FileInfo
+	Buffer          *editor.Buffer
+	Editor          *editor.State
+	Markdown        bool
+	Mode            Mode
+	BOM             bool
+	Large           bool
+	Anchor          string
+	state           saveState
+	saved           Fingerprint
+	revisionVersion uint64
+	revisionValue   Revision
+	revisionKnown   bool
 }
 
 func Open(ctx context.Context, path, area string, markdownMode Mode) (*Document, error) {
@@ -94,6 +100,7 @@ func Open(ctx context.Context, path, area string, markdownMode Mode) (*Document,
 		}
 	}
 	raw := data.Bytes()
+	fingerprint := Fingerprint{Hash: sha256.Sum256(raw), Exists: true}
 	bom := bytes.HasPrefix(raw, []byte{0xef, 0xbb, 0xbf})
 	if bom {
 		raw = raw[3:]
@@ -112,6 +119,8 @@ func Open(ctx context.Context, path, area string, markdownMode Mode) (*Document,
 	ext := strings.ToLower(filepath.Ext(path))
 	md := ext == ".md" || ext == ".markdown"
 	d := &Document{Path: path, Area: area, Info: info, Buffer: b, Editor: &editor.State{Buffer: b}, Markdown: md, BOM: bom, Large: md && len(raw) > LargeMarkdown}
+	d.saved = fingerprint
+	d.state.saved = snapshotRevision(b.Snapshot())
 	if md && !d.Large {
 		d.Mode = markdownMode
 	}
@@ -127,5 +136,5 @@ func language(path string) *editor.Language {
 }
 
 func (d *Document) Same(other *Document) bool {
-	return d.Path == other.Path || os.SameFile(d.Info, other.Info)
+	return d.Path == other.Path || (d.Info != nil && other.Info != nil && os.SameFile(d.Info, other.Info))
 }

@@ -3,7 +3,6 @@ package app
 import (
 	"fmt"
 
-	"github.com/egoist/mygo"
 	"github.com/egoist/mygo/ui"
 	"github.com/egoist/mygo/ui/editor"
 	"github.com/jewei/wondervision/internal/documents"
@@ -11,6 +10,9 @@ import (
 )
 
 func (a *App) view(c *ui.Context) {
+	c.OnShortcut(ui.Cmd, ui.KeyS, func() { a.saveDocument(a.active(), nil) })
+	c.OnShortcut(ui.Cmd|ui.Shift, ui.KeyS, func() { a.saveAs(a.active(), nil) })
+	c.OnShortcut(ui.Cmd, ui.KeyW, func() { a.requestClose(a.active()) })
 	c.OnShortcut(ui.Cmd, ui.KeyO, func() { a.choose(false) })
 	c.OnShortcut(ui.Cmd|ui.Shift, ui.KeyO, func() { a.choose(true) })
 	c.OnShortcut(ui.Cmd, ui.KeyB, func() { a.prefs.SidebarHidden = !a.prefs.SidebarHidden; a.remember() })
@@ -23,7 +25,9 @@ func (a *App) view(c *ui.Context) {
 	ui.Column(c).Fill().Background(t.Background).Children(func() {
 		ui.Row(c).Padding(8, 16).Gap(12).BorderWidth(0, 0, 1, 0).BorderColor(t.Border).Children(func() {
 			ui.Text(c, "WonderVision").Bold()
+			ui.MenuButton(c, "File", a.fileMenu)
 			ui.Text(c, a.title()).Grow(1).SingleLine().TextColor(t.TextMuted)
+			ui.Button(c, "Save").Disabled(a.active() == nil || (a.active() != nil && a.active().Saving())).OnClick(func() { a.saveDocument(a.active(), nil) })
 			ui.Button(c, "Open File").Disabled(a.restoring || a.dialogOpen).OnClick(func() { a.choose(false) })
 			ui.Button(c, "Open Folder").Disabled(a.restoring || a.dialogOpen).OnClick(func() { a.choose(true) })
 			label := "Hide Sidebar"
@@ -63,9 +67,12 @@ func (a *App) view(c *ui.Context) {
 				if d.BOM {
 					encoding = "UTF-8 BOM"
 				}
-				state := "Disk unchanged"
-				if d.Buffer.Modified() {
-					state = "Unsaved edits in memory · Save unavailable"
+				state := "Saved"
+				if d.Dirty() {
+					state = "Unsaved"
+				}
+				if d.Saving() {
+					state = "Saving…"
 				}
 				newline := "LF"
 				if d.Buffer.LineEnding() == "\r\n" {
@@ -80,11 +87,7 @@ func (a *App) view(c *ui.Context) {
 			}
 		})
 	})
-	switch ui.AlertDialog(c, &a.askQuit, "Discard unsaved edits?", "Edits are only in memory. Saving is not available in this build.", "Discard and Quit", "Keep Editing") {
-	case 0:
-		a.allowQuit = true
-		mygo.App.Quit()
-	}
+	a.editingDialogs(c)
 }
 
 func (a *App) explorer(c *ui.Context) {
@@ -151,11 +154,18 @@ func (a *App) documentView(c *ui.Context) {
 			tabs := ui.TabsBase(c, &a.tab, len(a.docs))
 			tabs.List.Gap(2).Children(func() {
 				for i, d := range a.docs {
-					tab := tabs.Tab(i).Padding(8, 12).Tooltip(d.Path)
+					tab := tabs.Tab(i).Padding(6, 10).Tooltip(d.Path).Label(baseName(d.Path))
 					if i == a.tab {
 						tab.Background(c.Theme().Surface)
 					}
-					tab.Children(func() { ui.Text(c, baseName(d.Path)) })
+					tab.Children(func() {
+						name := baseName(d.Path)
+						if d.Dirty() {
+							name += " •"
+						}
+						ui.Text(c, name)
+						ui.Button(c, "×").Label("Close "+baseName(d.Path)).Padding(1, 4).Disabled(d.Saving()).OnClick(func() { a.requestClose(d) })
+					})
 				}
 			})
 		})

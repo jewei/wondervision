@@ -59,6 +59,10 @@ type App struct {
 	allowQuit     bool
 	quitWhenSaved bool
 	finishQuit    func()
+	closeDoc      *documents.Document
+	askClose      bool
+	replaceSave   *replaceSaveRequest
+	askReplace    bool
 }
 
 func newApp() *App {
@@ -176,11 +180,11 @@ func (a *App) remember() {
 			}
 			if a.prefs != s {
 				a.remember()
-			} else if a.quitWhenSaved {
+			} else if err == nil {
+				a.settleQuit()
+			} else {
 				a.quitWhenSaved = false
-				if err == nil && a.finishQuit != nil {
-					a.finishQuit()
-				}
+				a.allowQuit = false
 			}
 		}
 	}) {
@@ -397,7 +401,7 @@ func (a *App) needsQuitConfirmation() bool {
 		return false
 	}
 	for _, d := range a.docs {
-		if d.Buffer.Modified() {
+		if d.Dirty() {
 			a.askQuit = true
 			return true
 		}
@@ -409,7 +413,7 @@ func (a *App) deferQuit() bool {
 	if a.needsQuitConfirmation() {
 		return true
 	}
-	if a.prefsSaving {
+	if a.anySaving() || a.prefsSaving {
 		a.quitWhenSaved = true
 		return true
 	}
@@ -421,4 +425,17 @@ func (a *App) title() string {
 		return "No folder open"
 	}
 	return filepath.Base(a.workspace.Root)
+}
+
+func (a *App) settleQuit() {
+	if !a.quitWhenSaved || a.anySaving() || a.prefsSaving {
+		return
+	}
+	a.quitWhenSaved = false
+	if a.needsQuitConfirmation() {
+		return
+	}
+	if a.finishQuit != nil {
+		a.finishQuit()
+	}
 }

@@ -9,6 +9,7 @@ import (
 	"io"
 	"os"
 	"path/filepath"
+	"strings"
 
 	"github.com/egoist/mygo/ui/editor"
 )
@@ -255,4 +256,45 @@ func fingerprintAt(ctx context.Context, root *os.Root, name string) (Fingerprint
 	result.Exists = true
 	copy(result.Hash[:], h.Sum(nil))
 	return result, info, nil
+}
+
+func Destination(path string) (string, error) {
+	absolute, err := filepath.Abs(path)
+	if err != nil {
+		return "", err
+	}
+	parent, err := filepath.EvalSymlinks(filepath.Dir(absolute))
+	if err != nil {
+		return "", err
+	}
+	return filepath.Join(parent, filepath.Base(absolute)), nil
+}
+
+func InspectDestination(ctx context.Context, path string) (Fingerprint, error) {
+	root, err := os.OpenRoot(filepath.Dir(path))
+	if err != nil {
+		return Fingerprint{}, err
+	}
+	defer root.Close()
+	fp, _, err := fingerprintAt(ctx, root, filepath.Base(path))
+	return fp, err
+}
+
+func (d *Document) PrepareSaveAsReplace(path string, expected Fingerprint) (SavePlan, error) {
+	return d.plan(path, expected, true)
+}
+func (d *Document) CancelSave(plan SavePlan) { d.state.complete(plan.token, false) }
+
+func (d *Document) Relocate(path, area string, info os.FileInfo) {
+	d.Path = path
+	d.Area = area
+	d.Info = info
+	d.Buffer.SetLanguage(language(path))
+	ext := strings.ToLower(filepath.Ext(path))
+	wasMarkdown := d.Markdown
+	d.Markdown = ext == ".md" || ext == ".markdown"
+	d.Large = d.Markdown && d.Buffer.Len() > LargeMarkdown
+	if !d.Markdown || !wasMarkdown {
+		d.Mode = Edit
+	}
 }

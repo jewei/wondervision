@@ -13,6 +13,7 @@ import (
 	"github.com/egoist/mygo/ui/editor"
 	"github.com/jewei/wondervision/internal/documents"
 	"github.com/jewei/wondervision/internal/preferences"
+	"github.com/jewei/wondervision/internal/search"
 	"github.com/jewei/wondervision/internal/workspace"
 )
 
@@ -89,6 +90,8 @@ type App struct {
 	deletePrompt     bool
 	fileBusy         bool
 	fileCancel       context.CancelFunc
+	overlay          overlayState  // the one open overlay (palette, Quick Open, search)
+	files            *search.Index // Quick Open paths for the current workspace
 }
 
 func newApp() *App {
@@ -209,7 +212,7 @@ func (a *App) remember() {
 			if err != nil {
 				a.notify(fmt.Errorf("save preferences: %w", err))
 			}
-			if a.prefs != s {
+			if !a.prefs.Equal(s) {
 				a.remember()
 			} else if err == nil {
 				a.settleQuit()
@@ -307,6 +310,10 @@ func (a *App) openFolder(path string) {
 			a.wsCtx, a.wsCancel = context.WithCancel(a.ctx)
 			a.epoch++
 			a.workspace = w
+			a.files = search.NewIndex(a.wsCtx, w.Root, a.redraw)
+			if a.overlay.kind == searchOverlay {
+				a.closeOverlay()
+			}
 			for _, d := range a.docs {
 				if workspace.Contains(w.Root, d.Path) && d.Area != w.Root {
 					d.Area = w.Root
@@ -381,7 +388,18 @@ func (a *App) switchTab(index int) {
 	a.activate(index)
 }
 
+// target is where to show an opened file: a Markdown anchor, or a 1-based
+// line and 0-based byte column.
+type target struct {
+	anchor    string
+	line, col int
+}
+
 func (a *App) openFile(path, area, anchor string) {
+	a.openFileTo(path, area, target{anchor: anchor})
+}
+
+func (a *App) openFileTo(path, area string, at target) {
 	a.openScoped = area != ""
 	if a.openCancel != nil {
 		a.openCancel()
@@ -391,7 +409,7 @@ func (a *App) openFile(path, area, anchor string) {
 		if d.Path == path {
 			a.fileLoading = false
 			a.activate(i)
-			a.setAnchor(d, anchor)
+			a.show(d, at)
 			return
 		}
 	}
@@ -413,7 +431,7 @@ func (a *App) openFile(path, area, anchor string) {
 			for i, existing := range a.docs {
 				if existing.Same(d) {
 					a.activate(i)
-					a.setAnchor(existing, anchor)
+					a.show(existing, at)
 					return
 				}
 			}
@@ -424,7 +442,7 @@ func (a *App) openFile(path, area, anchor string) {
 			a.startWatch(d)
 			a.scroll[d] = &ui.ScrollState{}
 			a.activate(len(a.docs) - 1)
-			a.setAnchor(d, anchor)
+			a.show(d, at)
 		}
 	}) {
 		a.fileLoading = false

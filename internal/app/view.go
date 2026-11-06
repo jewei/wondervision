@@ -10,36 +10,24 @@ import (
 )
 
 func (a *App) view(c *ui.Context) {
-	c.OnShortcut(ui.Cmd, ui.KeyN, func() { a.requestFileAction(createFile) })
-	c.OnShortcut(0, ui.KeyF2, func() { a.requestFileAction(renameFile) })
-	c.OnShortcut(ui.Cmd, ui.KeyS, func() { a.saveDocument(a.active(), nil) })
-	c.OnShortcut(ui.Cmd|ui.Shift, ui.KeyS, func() { a.saveAs(a.active(), nil) })
-	c.OnShortcut(ui.Cmd, ui.KeyW, func() { a.requestClose(a.active()) })
-	c.OnShortcut(ui.Cmd, ui.KeyO, func() { a.choose(false) })
-	c.OnShortcut(ui.Cmd|ui.Shift, ui.KeyO, func() { a.choose(true) })
-	c.OnShortcut(ui.Cmd, ui.KeyB, func() { a.prefs.SidebarHidden = !a.prefs.SidebarHidden; a.remember() })
-	c.OnShortcut(ui.Cmd, ui.KeyTab, func() {
-		if len(a.docs) > 0 {
-			a.switchTab((a.tab + 1) % len(a.docs))
-		}
-	})
+	a.bindShortcuts(c)
 	t := c.Theme()
 	ui.Column(c).Fill().Background(t.Background).Children(func() {
 		ui.Row(c).Padding(8, 16).Gap(12).BorderWidth(0, 0, 1, 0).BorderColor(t.Border).Children(func() {
 			ui.Text(c, "WonderVision").Bold()
-			ui.PopoverMenuButton(c, "File", a.fileMenu)
+			ui.PopoverMenuButton(c, "File", a.fileMenu(c))
 			ui.Text(c, a.title()).Grow(1).SingleLine().TextColor(t.TextMuted)
 			if len(a.recoveries) > 0 {
 				ui.Button(c, "Recover drafts").OnClick(func() { a.recoveryPanel = true })
 			}
-			ui.Button(c, "Save").Disabled(a.active() == nil || (a.active() != nil && (a.active().Saving() || a.fileBusy))).OnClick(func() { a.saveDocument(a.active(), nil) })
-			ui.Button(c, "Open File").Disabled(a.restoring || a.dialogOpen || a.fileBusy).OnClick(func() { a.choose(false) })
-			ui.Button(c, "Open Folder").Disabled(a.restoring || a.dialogOpen || a.fileBusy).OnClick(func() { a.choose(true) })
+			a.toolbarButton(c, cmdSave, "")
+			a.toolbarButton(c, cmdOpenFile, "")
+			a.toolbarButton(c, cmdOpenFolder, "")
 			label := "Hide Sidebar"
 			if a.prefs.SidebarHidden {
 				label = "Show Sidebar"
 			}
-			ui.Button(c, label).OnClick(func() { a.prefs.SidebarHidden = !a.prefs.SidebarHidden; a.remember() })
+			a.toolbarButton(c, cmdToggleSidebar, label)
 		})
 		if a.err != "" {
 			ui.Row(c).Padding(8, 16).Gap(12).BorderWidth(0, 0, 1, 0).BorderColor(t.Border).Children(func() {
@@ -100,6 +88,7 @@ func (a *App) view(c *ui.Context) {
 	})
 	a.editingDialogs(c)
 	a.fileDialogs(c)
+	a.overlays(c)
 	a.observeEdits()
 }
 
@@ -108,11 +97,7 @@ func (a *App) explorer(c *ui.Context) {
 	ui.Column(c).Fill().Background(t.Surface).Children(func() {
 		ui.Row(c).Padding(12).Children(func() {
 			ui.Text(c, "EXPLORER").FontSize(11).TextColor(t.TextMuted).Grow(1)
-			ui.Button(c, "Refresh").Disabled(a.workspace == nil || a.folderLoading).OnClick(func() {
-				if a.workspace != nil {
-					a.openFolder(a.workspace.Root)
-				}
-			})
+			a.toolbarButton(c, cmdRefreshExplorer, "Refresh")
 		})
 		if a.workspace == nil {
 			ui.Text(c, "No folder open").Padding(12).TextColor(t.TextMuted)

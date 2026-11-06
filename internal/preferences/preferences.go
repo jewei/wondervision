@@ -7,6 +7,7 @@ import (
 	"io"
 	"os"
 	"path/filepath"
+	"slices"
 )
 
 type State struct {
@@ -15,6 +16,46 @@ type State struct {
 	MarkdownMode  int     `json:"markdown_mode"`
 	SidebarHidden bool    `json:"sidebar_hidden,omitempty"`
 	SidebarWidth  float32 `json:"sidebar_width,omitempty"`
+	// Recent holds absolute paths of recently opened files, most recent
+	// first, for Quick Open. Paths only: never document contents.
+	Recent []string `json:"recent,omitempty"`
+}
+
+// Equal reports whether s and o hold the same preferences.
+func (s State) Equal(o State) bool {
+	return s.Workspace == o.Workspace && s.ActiveFile == o.ActiveFile &&
+		s.MarkdownMode == o.MarkdownMode && s.SidebarHidden == o.SidebarHidden &&
+		s.SidebarWidth == o.SidebarWidth && slices.Equal(s.Recent, o.Recent)
+}
+
+// MaxRecent is how many recent files are kept.
+const MaxRecent = 20
+
+// AddRecent returns recent with path moved or added to the front, without
+// duplicates and at most MaxRecent long. It never modifies recent, so a saved
+// copy of a State can share the slice safely.
+func AddRecent(recent []string, path string) []string {
+	out := make([]string, 0, min(len(recent)+1, MaxRecent))
+	out = append(out, path)
+	for _, p := range recent {
+		if p != path && len(out) < MaxRecent {
+			out = append(out, p)
+		}
+	}
+	return out
+}
+
+// cleanRecent drops relative paths and duplicates and caps the list.
+func cleanRecent(recent []string) []string {
+	var out []string
+	seen := make(map[string]bool)
+	for _, p := range recent {
+		if filepath.IsAbs(p) && !seen[p] && len(out) < MaxRecent {
+			seen[p] = true
+			out = append(out, p)
+		}
+	}
+	return out
 }
 
 func Path() (string, error) {
@@ -42,6 +83,7 @@ func Load(path string) (State, error) {
 	if s.SidebarWidth < 120 || s.SidebarWidth > 800 {
 		s.SidebarWidth = 220
 	}
+	s.Recent = cleanRecent(s.Recent)
 	return s, err
 }
 

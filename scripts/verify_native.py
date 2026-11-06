@@ -51,7 +51,12 @@ class Desktop:
 
     def pick(self, title, path, out, accept='Open'):
         def locate():
-            tree = subprocess.check_output(['xwininfo', '-root', '-tree'], text=True, timeout=3)
+            # A window destroyed mid-walk (a closing popup, a WM frame) makes
+            # xwininfo fail with BadWindow; that is "not found yet", not an error.
+            try:
+                tree = subprocess.check_output(['xwininfo', '-root', '-tree'], text=True, stderr=subprocess.DEVNULL, timeout=3)
+            except subprocess.CalledProcessError:
+                return None
             for found in re.finditer(r'(0x[0-9a-f]+) "' + re.escape(title) + r'"', tree):
                 try:
                     owner = subprocess.check_output(['xprop', '-id', found[1], '_NET_WM_PID'], text=True, stderr=subprocess.DEVNULL, timeout=3)

@@ -14,6 +14,8 @@ A failed or skipped entry point stays unverified; another path cannot replace it
 - [Keep a session](session.md).
 - [Save, resolve conflicts, and recover drafts](editing.md), with the separate
   `scripts/verify_editing.py` native runner.
+- [Work from the keyboard](keyboard.md): command palette, Quick Open and
+  workspace search, with the separate `scripts/verify_m3.py` native runner.
 
 Every recipe runs with `python3 scripts/verify_native.py run --out` followed by a
 fresh directory under `build/verification/`. The common run covers the map in

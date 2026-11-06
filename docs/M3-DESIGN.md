@@ -160,10 +160,33 @@ a.toolbarButton(c, cmdSave) // toolbar buttons by ID
 - Should Settings exist in M3, or show "No settings yet" (chosen for now)?
 - Should Save As, Reload from Disk and Compare Disk Version be in the palette?
   (Yes: they're in the table, so they appear everywhere.)
-- `Grep` reports byte columns. The editor's `Pos.Col` unit needs checking
-  before open-at-column; open-at-line is safe either way.
+- `Grep` reports byte columns; `editor.Pos.Col` is also bytes from the line
+  start (checked in MyGo v0.7.4), so a hit opens at its exact column.
 
 ## Next implementation step
 
 Build `internal/search` with its tests, then `commands.go` with the palette,
 then Quick Open, then content search, each slice runnable and verified.
+
+## Found during implementation
+
+These didn't change the shape, but each changed a detail of the sketch:
+
+- **Enter reaches the field, not the panel.** A focused `SearchField` takes
+  Enter as Submitted, so a panel shortcut for Enter never fires. Each overlay
+  handles Enter through its field's Submitted. Up and Down do reach the panel.
+- **No AutoFocus on the query fields.** AutoFocus takes the focus before
+  `DialogBase` records the element that had it, so Escape couldn't give the
+  focus back to the editor. The dialog moves the focus into its first field
+  anyway. Found by `scripts/verify_m3.py` in the real window, then reproduced in
+  `TestEscapeReturnsFocusToTheEditor`.
+- **A modal overlay holds the keyboard.** Window shortcuts wait while one is
+  open (MyGo's documented behaviour), so pressing another overlay's shortcut
+  does nothing until Escape. Accepted.
+- **Preferences equality.** `Recent` made `preferences.State` incomparable
+  with `==`; `State.Equal` replaces it, and a test fails if a new field isn't
+  compared.
+- **Search's supersession test** first passed against a mutant that shares
+  results between runs, because the first run was cancelled before it produced
+  anything. The test now holds the first run's results in flight while the
+  second starts, and catches that mutant.

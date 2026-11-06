@@ -15,6 +15,7 @@ go test ./...
 go build -tags e2e -o build/wondervision-e2e ./cmd/wondervision
 python3 scripts/verify_native.py run --out build/verification/native-run
 python3 scripts/verify_editing.py --out build/verification/editing-run
+python3 scripts/verify_m3.py --out build/verification/m3-run
 ```
 
 The output directory must not exist. The runner creates its own workspace,

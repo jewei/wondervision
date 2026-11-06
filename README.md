@@ -1,7 +1,7 @@
 # WonderVision
 
 A native, single-window Go text workspace using MyGo. This repository implements
-M0–M2 of [the specification](spec.md).
+M0–M3 of [the specification](spec.md).
 
 ## Build and run
 
@@ -27,11 +27,15 @@ No frontend, local server, or runtime network client is used.
 - M2: manual Save/Save As, dirty tabs and protected close/quit, fingerprinted
   atomic saves, scoped external-change watches, explicit conflict resolution,
   private recovery for non-sensitive drafts, and workspace file actions.
+- M3: command palette (Ctrl/Cmd+Shift+P), Quick Open (Ctrl/Cmd+P) with an
+  on-demand cancellable scan and recent files, and workspace search
+  (Ctrl/Cmd+Shift+F) with streamed results that open at the matching line.
+  One command table drives shortcuts, the File menu, toolbar and palette. See
+  [the M3 design](docs/M3-DESIGN.md).
 
 Edits stay in memory until Save. Recovery copies follow non-sensitive edits after
 15 seconds of quiescence and are reviewed after a crash; `.env`, keys, certificates,
-and credential/secret filenames have recovery disabled. Quick Open, search, and
-the command palette remain M3. Files over 20 MiB
+and credential/secret filenames have recovery disabled. Files over 20 MiB
 are refused; Markdown over 2 MiB starts in Edit and requires an explicit preview
 action. Only UTF-8 text is supported. The Linux desktop was exercised; macOS and
 Windows have not been built or run in this pass.
@@ -64,6 +68,7 @@ go tool mygo vet
 go build -tags e2e -o build/wondervision-e2e ./cmd/wondervision
 python3 scripts/verify_native.py run --out build/verification/native-run
 python3 scripts/verify_editing.py --out build/verification/editing-run
+python3 scripts/verify_m3.py --out build/verification/m3-run
 python3 scripts/verify_request_order.py --mutation-check
 python3 scripts/verify_save_model.py
 python3 scripts/verify_recovery.py

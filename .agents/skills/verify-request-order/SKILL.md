@@ -75,4 +75,6 @@ its test oracle and confirm the same UI-thread atomic steps and lifetime rules.
 Extend the schedules when the domain changes. Run the helper and the full test
 suite. Move the sync commit forward only after that review and successful
 mutation checks. Use pstack's `/maintain-formal-verification-skill` to audit
-coverage after changes that did not recheck it.
+coverage after changes that did not recheck it; where it is not installed,
+run `git diff --stat <sync commit>..HEAD` over the covered files and recheck
+each changed function against its schedule.

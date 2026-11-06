@@ -94,4 +94,6 @@ Confirm that `preview.png`, `edit.png`, `split.png`, and the JSON proof survive.
 `scripts/verify_native.py` is executable and provides `run`, `doctor`, and
 `cleanup` as shown above. It uses the standard Python library and native X11
 libraries. Keep the feature map aligned with the runner. Use pstack's
-`/maintain-verification-skill` when changing the control surface or journeys.
+`/maintain-verification-skill` when changing the control surface or journeys;
+where it is not installed, update the runner, the feature files and their
+journeys in the same change, and rerun the changed journeys.

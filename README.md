@@ -77,7 +77,9 @@ a time. All test workspaces and preferences are isolated.
 The save-model helper additionally needs Java 11+ and downloads a checksum-pinned
 development-only TLC jar. The application gains no runtime dependency.
 
-Project-local pstack verification skills live in `.cursor/skills/`. See
+Project-local verification skills live in `.agents/skills/` (linked from
+`.claude/skills/` for Claude Code). CI runs the checks above on every pull
+request (`.github/workflows/verify.yml`). See
 [the M2 workflow](docs/M2-WORKFLOW.md), [M2 evidence](docs/verification/M2.md),
 and [observed performance](PERFORMANCE.md). Bounded request-order tests cover
 143 schedules and reject two deliberately broken guard variants; they are not an

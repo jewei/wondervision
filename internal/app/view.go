@@ -10,6 +10,8 @@ import (
 )
 
 func (a *App) view(c *ui.Context) {
+	c.OnShortcut(ui.Cmd, ui.KeyN, func() { a.requestFileAction(createFile) })
+	c.OnShortcut(0, ui.KeyF2, func() { a.requestFileAction(renameFile) })
 	c.OnShortcut(ui.Cmd, ui.KeyS, func() { a.saveDocument(a.active(), nil) })
 	c.OnShortcut(ui.Cmd|ui.Shift, ui.KeyS, func() { a.saveAs(a.active(), nil) })
 	c.OnShortcut(ui.Cmd, ui.KeyW, func() { a.requestClose(a.active()) })
@@ -25,14 +27,14 @@ func (a *App) view(c *ui.Context) {
 	ui.Column(c).Fill().Background(t.Background).Children(func() {
 		ui.Row(c).Padding(8, 16).Gap(12).BorderWidth(0, 0, 1, 0).BorderColor(t.Border).Children(func() {
 			ui.Text(c, "WonderVision").Bold()
-			ui.MenuButton(c, "File", a.fileMenu)
+			ui.PopoverMenuButton(c, "File", a.fileMenu)
 			ui.Text(c, a.title()).Grow(1).SingleLine().TextColor(t.TextMuted)
 			if len(a.recoveries) > 0 {
 				ui.Button(c, "Recover drafts").OnClick(func() { a.recoveryPanel = true })
 			}
-			ui.Button(c, "Save").Disabled(a.active() == nil || (a.active() != nil && a.active().Saving())).OnClick(func() { a.saveDocument(a.active(), nil) })
-			ui.Button(c, "Open File").Disabled(a.restoring || a.dialogOpen).OnClick(func() { a.choose(false) })
-			ui.Button(c, "Open Folder").Disabled(a.restoring || a.dialogOpen).OnClick(func() { a.choose(true) })
+			ui.Button(c, "Save").Disabled(a.active() == nil || (a.active() != nil && (a.active().Saving() || a.fileBusy))).OnClick(func() { a.saveDocument(a.active(), nil) })
+			ui.Button(c, "Open File").Disabled(a.restoring || a.dialogOpen || a.fileBusy).OnClick(func() { a.choose(false) })
+			ui.Button(c, "Open Folder").Disabled(a.restoring || a.dialogOpen || a.fileBusy).OnClick(func() { a.choose(true) })
 			label := "Hide Sidebar"
 			if a.prefs.SidebarHidden {
 				label = "Show Sidebar"
@@ -94,6 +96,7 @@ func (a *App) view(c *ui.Context) {
 		})
 	})
 	a.editingDialogs(c)
+	a.fileDialogs(c)
 	a.observeEdits()
 }
 
@@ -180,6 +183,16 @@ func (a *App) documentView(c *ui.Context) {
 			a.switchTab(a.tab)
 		}
 		d := a.active()
+		if a.fileBusy {
+			ui.Row(c).Padding(8, 12).Gap(8).Children(func() {
+				ui.Text(c, "File operation in progress…").Grow(1)
+				ui.Button(c, "Cancel operation").OnClick(func() {
+					if a.fileCancel != nil {
+						a.fileCancel()
+					}
+				})
+			})
+		}
 		if disk, changed := a.external[d]; changed {
 			ui.Row(c).Padding(8, 12).Gap(8).Background(c.Theme().Surface).Children(func() {
 				label := "File changed on disk"
@@ -219,6 +232,7 @@ func (a *App) documentView(c *ui.Context) {
 }
 
 func (a *App) editorView(c *ui.Context, d *documents.Document) {
+	d.Editor.ReadOnly = a.fileBusy
 	editor.View(c.Key(d.Path), d.Editor).Label("Editor").AutoFocus().Grow(1).FillWidth()
 }
 

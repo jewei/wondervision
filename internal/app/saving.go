@@ -37,7 +37,7 @@ func (a *App) anySaving() bool {
 }
 
 func (a *App) saveDocument(d *documents.Document, after func()) {
-	if d == nil || d.Saving() {
+	if d == nil || d.Saving() || a.fileBusy {
 		return
 	}
 	plan, err := d.PrepareSave()
@@ -114,7 +114,7 @@ func (a *App) activePath() string {
 }
 
 func (a *App) saveAs(d *documents.Document, after func()) {
-	if d == nil || d.Saving() || a.dialogOpen {
+	if d == nil || d.Saving() || a.dialogOpen || a.fileBusy {
 		return
 	}
 	a.dialogOpen = true
@@ -195,7 +195,7 @@ func (a *App) confirmReplaceSave() {
 }
 
 func (a *App) requestClose(d *documents.Document) {
-	if d == nil {
+	if d == nil || a.fileBusy {
 		return
 	}
 	if d.Saving() {

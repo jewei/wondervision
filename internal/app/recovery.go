@@ -236,7 +236,7 @@ func (a *App) showRecoveryPanel(c *ui.Context) {
 	ui.Modal(c, &a.recoveryPanel, func() {
 		ui.Column(c).Width(680).MaxHeight(500).Gap(12).Children(func() {
 			ui.Text(c, "Recover unsaved drafts").Bold()
-			ui.Scroll(c).Grow(1).MaxHeight(360).Children(func() {
+			ui.Scroll(c).Height(min(360, float32(len(a.recoveries))*64)).FillWidth().Children(func() {
 				for _, record := range a.recoveries {
 					ui.Row(c.Key(record.Path)).Padding(8).Gap(8).Children(func() {
 						ui.Text(c, record.Path).Grow(1)

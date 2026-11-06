@@ -238,3 +238,24 @@ func TestSaveRejectsParentSymlinkEscape(t *testing.T) {
 		t.Fatal("outside file was changed")
 	}
 }
+
+func TestFinalReplaceWindowIsNotCompareAndSwap(t *testing.T) {
+	path := filepath.Join(t.TempDir(), "note.txt")
+	os.WriteFile(path, []byte("original"), 0600)
+	d, _ := Open(context.Background(), path, "", Edit)
+	d.Buffer.Set("snapshot")
+	plan, _ := d.PrepareSave()
+	result, err := plan.write(context.Background(), func() {
+		if err := os.WriteFile(path, []byte("outside write after final check"), 0600); err != nil {
+			t.Fatal(err)
+		}
+	})
+	if err != nil {
+		t.Fatal(err)
+	}
+	d.CompleteSave(result, err)
+	raw, _ := os.ReadFile(path)
+	if string(raw) != "snapshot" {
+		t.Fatal("the documented final-replace interleaving did not reproduce")
+	}
+}

@@ -83,6 +83,12 @@ type App struct {
 	compareOpen      bool
 	compareDoc       *documents.Document
 	compareEditor    *editor.State
+	filePrompt       *fileRequest
+	filePromptOpen   bool
+	fileName         string
+	deletePrompt     bool
+	fileBusy         bool
+	fileCancel       context.CancelFunc
 }
 
 func newApp() *App {
@@ -165,6 +171,7 @@ func (a *App) restore() {
 	path, err := preferences.Path()
 	if err != nil {
 		a.notify(err)
+		a.loadRecoveries()
 		return
 	}
 	a.prefsPath = path
@@ -173,6 +180,7 @@ func (a *App) restore() {
 		s, err := preferences.Load(path)
 		return func() {
 			a.restoring = false
+			a.loadRecoveries()
 			if err != nil {
 				a.notify(fmt.Errorf("read preferences: %w", err))
 				return
@@ -184,7 +192,6 @@ func (a *App) restore() {
 			if s.ActiveFile != "" {
 				a.openFile(s.ActiveFile, "", "")
 			}
-			a.loadRecoveries()
 		}
 	})
 }
@@ -217,7 +224,7 @@ func (a *App) remember() {
 }
 
 func (a *App) choose(directory bool) {
-	if a.restoring || a.dialogOpen {
+	if a.restoring || a.dialogOpen || a.fileBusy {
 		return
 	}
 	a.dialogOpen = true
@@ -257,6 +264,10 @@ func (a *App) choose(directory bool) {
 }
 
 func (a *App) openFolder(path string) {
+	if a.fileBusy {
+		a.notify(errors.New("wait for the file operation to finish"))
+		return
+	}
 	if a.openScoped && a.openCancel != nil {
 		a.openCancel()
 		a.openID++
@@ -449,7 +460,7 @@ func (a *App) deferQuit() bool {
 	if a.needsQuitConfirmation() {
 		return true
 	}
-	if a.anySaving() || a.prefsSaving || a.pendingWrites > 0 {
+	if a.anySaving() || a.prefsSaving || a.pendingWrites > 0 || a.fileBusy {
 		a.quitWhenSaved = true
 		return true
 	}
@@ -464,7 +475,7 @@ func (a *App) title() string {
 }
 
 func (a *App) settleQuit() {
-	if !a.quitWhenSaved || a.anySaving() || a.prefsSaving || a.pendingWrites > 0 {
+	if !a.quitWhenSaved || a.anySaving() || a.prefsSaving || a.pendingWrites > 0 || a.fileBusy {
 		return
 	}
 	a.quitWhenSaved = false

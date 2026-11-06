@@ -112,7 +112,9 @@ func (d *Document) CompleteSave(result SaveResult, err error) bool {
 	return true
 }
 
-func (p SavePlan) Write(ctx context.Context) (result SaveResult, err error) {
+func (p SavePlan) Write(ctx context.Context) (SaveResult, error) { return p.write(ctx, nil) }
+
+func (p SavePlan) write(ctx context.Context, beforeReplace func()) (result SaveResult, err error) {
 	result = SaveResult{token: p.token, source: p.source}
 	if err = ctx.Err(); err != nil {
 		return
@@ -215,14 +217,17 @@ func (p SavePlan) Write(ctx context.Context) (result SaveResult, err error) {
 		err = e
 		return
 	}
-	now, _, e := fingerprintAt(ctx, root, name)
+	now, nowInfo, e := fingerprintAt(ctx, root, name)
 	if e != nil {
 		err = e
 		return
 	}
-	if now != before {
+	if now != before || (before.Exists && nowInfo.Mode().Perm() != info.Mode().Perm()) {
 		err = ErrConflict
 		return
+	}
+	if beforeReplace != nil {
+		beforeReplace()
 	}
 	if before.Exists {
 		e = root.Rename(temp, name)
@@ -230,7 +235,7 @@ func (p SavePlan) Write(ctx context.Context) (result SaveResult, err error) {
 		e = root.Link(temp, name)
 	}
 	if e != nil {
-		err = fmt.Errorf("replace file (original left intact): %w", e)
+		err = fmt.Errorf("replace file: %w", e)
 		return
 	}
 	result.Fingerprint.Exists = true

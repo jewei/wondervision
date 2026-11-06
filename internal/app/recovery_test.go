@@ -135,3 +135,24 @@ func TestDiscardedDraftCleanupCompletesBeforeQuit(t *testing.T) {
 		t.Fatal("discard removed the original file")
 	}
 }
+
+// Callers do not check documents.Sensitive before writeRecovery; the
+// documents package refuses sensitive paths itself. This pins that contract.
+func TestWriteRecoveryRefusesSensitiveWithoutCallerCheck(t *testing.T) {
+	a := newApp()
+	defer a.cancel()
+	root := fixture(t)
+	a.recoveryStore = documents.NewRecoveryStore(filepath.Join(t.TempDir(), "recovery"))
+	a.openFile(filepath.Join(root, ".env"), root, "")
+	drain(t, a)
+	d := a.active()
+	d.Buffer.Set("KEY=unsaved secret")
+	if !d.Dirty() {
+		t.Fatal("fixture edit did not dirty the document")
+	}
+	a.writeRecovery(d, a.ctx)
+	drain(t, a)
+	if _, err := os.Stat(a.recoveryStore.Dir); !os.IsNotExist(err) {
+		t.Fatalf("writeRecovery created recovery state for a sensitive file: %v", err)
+	}
+}

@@ -99,7 +99,7 @@ func TestRecoveredRenameCleansOldClaim(t *testing.T) {
 			}
 			d.Relocate(newPath, d.Area, d.Info)
 			a.recoverySaved(d, oldPath)
-			if d.Dirty() && !documents.Sensitive(d.Path) {
+			if d.Dirty() {
 				a.writeRecovery(d, a.ctx)
 			}
 			drain(t, a)

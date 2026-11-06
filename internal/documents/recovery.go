@@ -40,6 +40,10 @@ type RecoveryRecord struct {
 	Session       string      `json:"session"`
 }
 
+// RecoveryPlan is an immutable recovery draft. Its fields are unexported so a
+// plan can only come from Document.RecoverySnapshot, which refuses sensitive
+// paths; RecoveryStore.Write refuses them again. Callers therefore never need
+// to check Sensitive before writing a draft. internal/guardrails enforces this.
 type RecoveryPlan struct {
 	record   RecoveryRecord
 	snapshot editor.Snapshot

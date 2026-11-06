@@ -77,6 +77,7 @@ func (a *App) writeSave(d *documents.Document, plan documents.SavePlan, after fu
 			d.Relocate(d.Path, area, result.Info)
 			if oldPath != d.Path {
 				a.releasePreview()
+				a.refreshExplorer()
 			}
 			a.recoverySaved(d, oldPath)
 			delete(a.external, d)

@@ -18,7 +18,14 @@ import (
 	"github.com/egoist/mygo/ui/editor"
 )
 
-type RecoveryStore struct{ Dir string }
+type RecoveryStore struct {
+	Dir     string
+	session string
+}
+
+func NewRecoveryStore(dir string) *RecoveryStore {
+	return &RecoveryStore{Dir: dir, session: rand.Text()}
+}
 
 type RecoveryRecord struct {
 	Path          string      `json:"path"`
@@ -30,11 +37,13 @@ type RecoveryRecord struct {
 	Size          int64       `json:"size"`
 	BodyHash      [32]byte    `json:"body_hash"`
 	Format        int         `json:"format"`
+	Session       string      `json:"session"`
 }
 
 type RecoveryPlan struct {
 	record   RecoveryRecord
 	snapshot editor.Snapshot
+	claim    *RecoveryRecord
 }
 
 func Sensitive(path string) bool {
@@ -68,7 +77,7 @@ func (d *Document) RecoverySnapshot() (RecoveryPlan, error) {
 		return RecoveryPlan{}, errors.New("recovery is disabled for sensitive filenames")
 	}
 	s := d.Buffer.Snapshot()
-	return RecoveryPlan{record: RecoveryRecord{Path: d.Path, Area: d.Area, Base: d.saved, SavedRevision: d.state.saved, BOM: d.BOM, Newline: d.Buffer.LineEnding(), Format: 1}, snapshot: s}, nil
+	return RecoveryPlan{record: RecoveryRecord{Path: d.Path, Area: d.Area, Base: d.saved, SavedRevision: d.state.saved, BOM: d.BOM, Newline: d.Buffer.LineEnding(), Format: 1}, snapshot: s, claim: d.recoveryClaim}, nil
 }
 
 func recoveryName(path string) string {
@@ -78,6 +87,10 @@ func recoveryName(path string) string {
 
 func (store RecoveryStore) Write(ctx context.Context, plan RecoveryPlan) error {
 	r := plan.record
+	if store.session == "" {
+		return errors.New("recovery store requires a session identity")
+	}
+	r.Session = store.session
 	if r.Format != 1 || !filepath.IsAbs(r.Path) || !filepath.IsAbs(r.Area) {
 		return errors.New("invalid recovery plan")
 	}
@@ -121,6 +134,19 @@ func (store RecoveryStore) Write(ctx context.Context, plan RecoveryPlan) error {
 		return err
 	}
 	defer root.Close()
+	name := recoveryName(r.Path)
+	if existing, e := root.Open(name); e == nil {
+		previous, readErr := readRecoveryHeader(existing)
+		existing.Close()
+		if readErr != nil {
+			return errors.New("existing recovery copy is damaged; it was preserved")
+		}
+		if previous.Session != store.session && (plan.claim == nil || plan.claim.Path != r.Path || previous != *plan.claim) {
+			return ErrUnreviewedRecovery
+		}
+	} else if !errors.Is(e, os.ErrNotExist) {
+		return e
+	}
 	temp := ".recovery-" + rand.Text()
 	f, err := root.OpenFile(temp, os.O_CREATE|os.O_EXCL|os.O_WRONLY, 0600)
 	if err != nil {
@@ -282,12 +308,21 @@ func (store RecoveryStore) Load(ctx context.Context, record RecoveryRecord) (*Do
 	d.saved = r.Base
 	d.state.saved = r.SavedRevision
 	d.revisionKnown = false
+	d.recoveryClaim = &r
 	d.Relocate(d.Path, d.Area, d.Info)
 	d.Mode = Edit
 	return d, nil
 }
 
+var ErrUnreviewedRecovery = errors.New("a recovery copy from a previous session awaits review")
+
 func (store RecoveryStore) Remove(ctx context.Context, path string) error {
+	return store.remove(ctx, path, nil)
+}
+func (store RecoveryStore) Discard(ctx context.Context, record RecoveryRecord) error {
+	return store.remove(ctx, record.Path, &record)
+}
+func (store RecoveryStore) remove(ctx context.Context, path string, approved *RecoveryRecord) error {
 	if err := ctx.Err(); err != nil {
 		return err
 	}
@@ -299,11 +334,37 @@ func (store RecoveryStore) Remove(ctx context.Context, path string) error {
 		return err
 	}
 	defer root.Close()
-	err = root.Remove(recoveryName(path))
+	name := recoveryName(path)
+	f, err := root.Open(name)
+	if errors.Is(err, os.ErrNotExist) {
+		return nil
+	}
+	if err != nil {
+		return err
+	}
+	r, err := readRecoveryHeader(f)
+	f.Close()
+	if err != nil {
+		return errors.New("damaged recovery copy was preserved")
+	}
+	if r.Session != store.session && (approved == nil || approved.Path != path || r != *approved) {
+		if approved != nil {
+			return ErrUnreviewedRecovery
+		}
+		return nil
+	}
+	err = root.Remove(name)
 	if errors.Is(err, os.ErrNotExist) {
 		return nil
 	}
 	return err
+}
+
+func (d *Document) RecoveryClaim(path string) (RecoveryRecord, bool) {
+	if d.recoveryClaim != nil && d.recoveryClaim.Path == path {
+		return *d.recoveryClaim, true
+	}
+	return RecoveryRecord{}, false
 }
 
 func (d *Document) RestoreDraft(other *Document) bool {
@@ -316,5 +377,6 @@ func (d *Document) RestoreDraft(other *Document) bool {
 	d.saved = other.saved
 	d.state.saved = other.state.saved
 	d.revisionKnown = false
+	d.recoveryClaim = other.recoveryClaim
 	return true
 }

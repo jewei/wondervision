@@ -2,10 +2,72 @@ package documents
 
 import (
 	"context"
+	"errors"
 	"os"
 	"path/filepath"
 	"testing"
 )
+
+func TestPreviousSessionDraftRequiresReview(t *testing.T) {
+	ctx := context.Background()
+	root := t.TempDir()
+	path := filepath.Join(root, "todo.md")
+	if err := os.WriteFile(path, []byte("original"), 0600); err != nil {
+		t.Fatal(err)
+	}
+	d, err := Open(ctx, path, root, Edit)
+	if err != nil {
+		t.Fatal(err)
+	}
+	d.Buffer.Set("older crash draft")
+	old := NewRecoveryStore(filepath.Join(t.TempDir(), "recovery"))
+	plan, _ := d.RecoverySnapshot()
+	if err = old.Write(ctx, plan); err != nil {
+		t.Fatal(err)
+	}
+	records, err := old.List(ctx)
+	if err != nil || len(records) != 1 {
+		t.Fatalf("list: %v %v", records, err)
+	}
+	fresh := NewRecoveryStore(old.Dir)
+	d.Buffer.Set("fresh session edits")
+	plan, _ = d.RecoverySnapshot()
+	if err = fresh.Write(ctx, plan); !errors.Is(err, ErrUnreviewedRecovery) {
+		t.Fatalf("unreviewed draft replaced: %v", err)
+	}
+	if err = fresh.Remove(ctx, path); err != nil {
+		t.Fatal(err)
+	}
+	recovered, err := fresh.Load(ctx, records[0])
+	if err != nil || recovered.Buffer.String() != "older crash draft" {
+		t.Fatalf("old draft lost: %v", err)
+	}
+	// Recovering is explicit ownership of this exact copy, even before its next timer fires.
+	if claim, ok := recovered.RecoveryClaim(path); !ok {
+		t.Fatal("recovered copy has no cleanup claim")
+	} else if err = fresh.Discard(ctx, claim); err != nil {
+		t.Fatal(err)
+	}
+	if remaining, err := fresh.List(ctx); err != nil || len(remaining) != 0 {
+		t.Fatal("explicit discard did not remove recovered copy")
+	}
+	if err = old.Write(ctx, plan); err != nil {
+		t.Fatal(err)
+	}
+	records, _ = fresh.List(ctx)
+	recovered, err = fresh.Load(ctx, records[0])
+	if err != nil {
+		t.Fatal(err)
+	}
+	recovered.Buffer.Set("continued recovered draft")
+	plan, _ = recovered.RecoverySnapshot()
+	if err = fresh.Write(ctx, plan); err != nil {
+		t.Fatalf("reviewed recovery could not continue: %v", err)
+	}
+	if err = old.Discard(ctx, records[0]); !errors.Is(err, ErrUnreviewedRecovery) {
+		t.Fatalf("stale discard approval deleted a newer copy: %v", err)
+	}
+}
 
 func TestRecoveryPrivateRoundTripAndRemoval(t *testing.T) {
 	root := t.TempDir()
@@ -17,7 +79,7 @@ func TestRecoveryPrivateRoundTripAndRemoval(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	store := RecoveryStore{Dir: filepath.Join(t.TempDir(), "recovery")}
+	store := *NewRecoveryStore(filepath.Join(t.TempDir(), "recovery"))
 	if err = store.Write(context.Background(), plan); err != nil {
 		t.Fatal(err)
 	}
@@ -63,7 +125,7 @@ func TestSensitiveRecoveryNeverWrites(t *testing.T) {
 	if _, err := d.RecoverySnapshot(); err == nil {
 		t.Fatal("sensitive document generated a recovery plan")
 	}
-	store := RecoveryStore{Dir: filepath.Join(t.TempDir(), "no-snapshots")}
+	store := *NewRecoveryStore(filepath.Join(t.TempDir(), "no-snapshots"))
 	if err := store.Write(context.Background(), RecoveryPlan{record: RecoveryRecord{Path: path}}); err == nil {
 		t.Fatal("store accepted a forged sensitive plan")
 	}
@@ -79,7 +141,7 @@ func TestRecoveryRetainsExternalConflictAndRejectsDamage(t *testing.T) {
 	d, _ := Open(context.Background(), path, root, Edit)
 	d.Buffer.Set("draft")
 	plan, _ := d.RecoverySnapshot()
-	store := RecoveryStore{Dir: filepath.Join(t.TempDir(), "recovery")}
+	store := *NewRecoveryStore(filepath.Join(t.TempDir(), "recovery"))
 	store.Write(context.Background(), plan)
 	records, _ := store.List(context.Background())
 	os.WriteFile(path, []byte("external after crash"), 0600)

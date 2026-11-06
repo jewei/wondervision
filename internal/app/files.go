@@ -62,6 +62,14 @@ func (a *App) requestFileAction(action fileAction) {
 	}
 	a.openID++
 	a.fileLoading = false
+	if action >= renameFile {
+		for _, record := range a.recoveries {
+			if workspace.Contains(source, record.Path) {
+				a.notify(errors.New("review the recovery copy before renaming, moving, or deleting this path"))
+				return
+			}
+		}
+	}
 	r := &fileRequest{action: action, source: source, workspace: a.workspace, epoch: a.epoch, versions: make(map[*documents.Document]uint64)}
 	for _, d := range a.docs {
 		if source != "" && workspace.Contains(source, d.Path) {

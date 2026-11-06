@@ -43,6 +43,7 @@ type Document struct {
 	revisionVersion uint64
 	revisionValue   Revision
 	revisionKnown   bool
+	recoveryClaim   *RecoveryRecord
 }
 
 func Open(ctx context.Context, path, area string, markdownMode Mode) (*Document, error) {

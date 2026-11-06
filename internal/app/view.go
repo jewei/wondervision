@@ -79,6 +79,9 @@ func (a *App) view(c *ui.Context) {
 				if d.Saving() {
 					state = "Saving…"
 				}
+				if a.hasUnreviewedRecovery(d.Path) {
+					state += " · Recovery copy awaits review"
+				}
 				if documents.Sensitive(d.Path) {
 					state += " · Recovery off"
 				}

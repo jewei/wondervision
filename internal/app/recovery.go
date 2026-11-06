@@ -26,7 +26,7 @@ func (a *App) initializeRecovery() {
 		a.notify(err)
 		return
 	}
-	a.recoveryStore = &documents.RecoveryStore{Dir: filepath.Join(dir, "wondervision", "recovery")}
+	a.recoveryStore = documents.NewRecoveryStore(filepath.Join(dir, "wondervision", "recovery"))
 }
 
 func (a *App) loadRecoveries() {
@@ -45,6 +45,9 @@ func (a *App) observeEdits() {
 		return
 	}
 	for _, d := range a.docs {
+		if a.hasUnreviewedRecovery(d.Path) {
+			continue
+		}
 		dirty, version := d.Dirty(), d.Buffer.Version()
 		e := a.recoveryEntries[d]
 		if e != nil && e.version == version && e.dirty == dirty {
@@ -86,7 +89,7 @@ func (a *App) observeEdits() {
 }
 
 func (a *App) writeRecovery(d *documents.Document, ctx context.Context) {
-	if a.recoveryStore == nil {
+	if a.recoveryStore == nil || a.allowQuit || a.hasUnreviewedRecovery(d.Path) {
 		return
 	}
 	plan, err := d.RecoverySnapshot()
@@ -101,6 +104,9 @@ func (a *App) writeRecovery(d *documents.Document, ctx context.Context) {
 			a.pendingWrites--
 			if err != nil && !errors.Is(err, context.Canceled) {
 				a.notify(fmt.Errorf("recovery snapshot: %w", err))
+				if errors.Is(err, documents.ErrUnreviewedRecovery) {
+					a.loadRecoveries()
+				}
 			}
 			a.settleQuit()
 		}
@@ -146,6 +152,9 @@ func (a *App) discardRecovery(d *documents.Document) {
 		delete(a.recoveryEntries, d)
 	}
 	a.removeRecoveryPath(d.Path)
+	if record, approved := d.RecoveryClaim(d.Path); approved {
+		a.discardRecoveryRecord(record)
+	}
 }
 
 func (a *App) recoverySaved(d *documents.Document, oldPath string) {
@@ -160,10 +169,21 @@ func (a *App) recoverySaved(d *documents.Document, oldPath string) {
 	}
 	if oldPath != d.Path || !d.Dirty() || documents.Sensitive(d.Path) {
 		a.removeRecoveryPath(oldPath)
+		if record, approved := d.RecoveryClaim(oldPath); approved {
+			a.discardRecoveryRecord(record)
+		}
 	}
 }
 
 func (a *App) recoverDraft(record documents.RecoveryRecord) {
+	if a.fileBusy {
+		return
+	}
+	if a.openCancel != nil {
+		a.openCancel()
+	}
+	a.openID++
+	request := a.openID
 	if a.recoveryStore == nil {
 		return
 	}
@@ -171,6 +191,9 @@ func (a *App) recoverDraft(record documents.RecoveryRecord) {
 	a.enqueue(func() func() {
 		recovered, err := store.Load(a.ctx, record)
 		return func() {
+			if request != a.openID {
+				return
+			}
 			if err != nil {
 				a.notify(err)
 				return
@@ -199,6 +222,19 @@ func (a *App) recoverDraft(record documents.RecoveryRecord) {
 }
 
 func (a *App) forgetRecoveryRecord(record documents.RecoveryRecord) {
+	for _, d := range a.docs {
+		if d.Path == record.Path {
+			if e := a.recoveryEntries[d]; e != nil {
+				if e.timer != nil {
+					e.timer.Stop()
+				}
+				if e.cancel != nil {
+					e.cancel()
+				}
+				delete(a.recoveryEntries, d)
+			}
+		}
+	}
 	for i, r := range a.recoveries {
 		if r.Path == record.Path {
 			a.recoveries = append(a.recoveries[:i], a.recoveries[i+1:]...)
@@ -217,7 +253,7 @@ func (a *App) discardRecoveryRecord(record documents.RecoveryRecord) {
 	store := *a.recoveryStore
 	a.pendingWrites++
 	if !a.enqueue(func() func() {
-		err := store.Remove(a.ctx, record.Path)
+		err := store.Discard(a.ctx, record)
 		return func() {
 			a.pendingWrites--
 			if err == nil {
@@ -248,4 +284,13 @@ func (a *App) showRecoveryPanel(c *ui.Context) {
 			ui.Button(c, "Later").OnClick(func() { a.recoveryPanel = false })
 		})
 	})
+}
+
+func (a *App) hasUnreviewedRecovery(path string) bool {
+	for _, record := range a.recoveries {
+		if record.Path == path {
+			return true
+		}
+	}
+	return false
 }

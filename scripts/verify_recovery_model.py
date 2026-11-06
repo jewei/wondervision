@@ -90,14 +90,15 @@ def main():
     args = parser.parse_args()
     out = args.out.resolve()
     out.mkdir(parents=True, exist_ok=True)
+    # The unmodified code first: a real break shows up here as a failing test.
+    baseline = run(['go', 'test', './internal/documents', '-count=1', '-v'], ROOT)
+    (out / 'code-baseline.txt').write_text(baseline.stdout)
+    assert baseline.returncode == 0, 'internal/documents tests fail on the current code:\n' + baseline.stdout
     jar = tlc_jar()
-    summaries = [check_model(jar, out, 'baseline', None)]
+    summaries = ['code-baseline: internal/documents tests pass', check_model(jar, out, 'baseline', None)]
     for name, flag, edit, test, failure in MUTANTS:
         summaries.append(check_model(jar, out, name, flag))
         summaries.append(check_code_mutant(out, name, edit, test, failure))
-    restored = run(['go', 'test', './internal/documents', '-count=1'], ROOT)
-    (out / 'code-restored.txt').write_text(restored.stdout)
-    assert restored.returncode == 0, restored.stdout
     report = '\n'.join(summaries) + ('\nVERIFIED: no unreviewed draft is replaced or deleted, for two sessions '
                                      'and up to 10 steps including crashes; each model mutant is rejected in real code.\n')
     (out / 'summary.txt').write_text(report)

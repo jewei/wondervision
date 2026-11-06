@@ -166,6 +166,34 @@ def until(check, what, seconds=15):
     raise AssertionError('timed out waiting for ' + what)
 
 
+# Unix socket paths must fit in sun_path: 108 bytes on Linux, 104 on macOS/BSD,
+# including the terminating NUL.
+SOCKET_PATH_LIMIT = 104
+SOCKET_DIR_PREFIX = 'wondervision-sock-'
+
+
+def socket_dir():
+    """Create a short private directory for the automation socket.
+
+    The socket cannot live under the evidence or scratch directory: their paths
+    grow with the checkout location, and a long path makes the app's bind fail.
+    """
+    path = Path(tempfile.mkdtemp(prefix=SOCKET_DIR_PREFIX, dir='/tmp'))
+    path.chmod(0o700)
+    sock = path / 'app.sock'
+    if len(os.fsencode(sock)) >= SOCKET_PATH_LIMIT:
+        shutil.rmtree(path)
+        raise AssertionError(f'automation socket path is too long for a Unix socket: {sock}')
+    return path
+
+
+def remove_socket_dir(path):
+    path = Path(path)
+    assert path.parent == Path('/tmp') and path.name.startswith(SOCKET_DIR_PREFIX), 'unexpected socket directory'
+    shutil.rmtree(path, ignore_errors=True)
+    return not path.exists()
+
+
 class Native:
     def __init__(self, sock, out):
         self.sock, self.out = sock, out
@@ -248,14 +276,15 @@ def run(binary, out):
     original = {str(p.relative_to(root)): hashlib.sha256(p.read_bytes()).hexdigest() for p in root.rglob('*') if p.is_file()}
     env = os.environ.copy()
     env['NO_AT_BRIDGE'] = '0'
-    env.update(XDG_CONFIG_HOME=str(scratch / 'config'), XDG_CACHE_HOME=str(scratch / 'cache'), MYGO_AUTOMATION=str(scratch / 'app.sock'))
+    sockets = socket_dir()
+    env.update(XDG_CONFIG_HOME=str(scratch / 'config'), XDG_CACHE_HOME=str(scratch / 'cache'), MYGO_AUTOMATION=str(sockets / 'app.sock'))
     proc = None
     log = (out / 'app.log').open('w')
     results = []
     try:
         def launch():
             p = subprocess.Popen([str(binary)], env=env, stdin=subprocess.DEVNULL, stdout=log, stderr=log)
-            manifest = {'pid': p.pid, 'binary': str(binary), 'socket': env['MYGO_AUTOMATION'], 'out': str(out), 'scratch': str(scratch), 'start': Path(f'/proc/{p.pid}/stat').read_text().split()[21]}
+            manifest = {'pid': p.pid, 'binary': str(binary), 'socket': env['MYGO_AUTOMATION'], 'socket_dir': str(sockets), 'out': str(out), 'scratch': str(scratch), 'start': Path(f'/proc/{p.pid}/stat').read_text().split()[21]}
             (out / 'instance.json').write_text(json.dumps(manifest, indent=2))
             until(lambda: Path(env['MYGO_AUTOMATION']).exists() or p.poll() is not None, 'native startup')
             assert p.poll() is None, 'application exited during startup'
@@ -361,7 +390,8 @@ def run(binary, out):
                 proc.wait()
         log.close()
         shutil.rmtree(scratch)
-        (out / 'cleanup.json').write_text(json.dumps({'process_exited': proc is None or proc.poll() is not None, 'scratch_removed': not scratch.exists()}))
+        socket_removed = remove_socket_dir(sockets)
+        (out / 'cleanup.json').write_text(json.dumps({'process_exited': proc is None or proc.poll() is not None, 'scratch_removed': not scratch.exists(), 'socket_removed': socket_removed}))
 
 
 def cleanup(manifest):
@@ -376,7 +406,8 @@ def cleanup(manifest):
     scratch = Path(manifest.get('scratch', str(Path(manifest['socket']).parent)))
     assert scratch.parent in (Path(tempfile.gettempdir()), Path(manifest['out']).parent) and scratch.name.startswith('wondervision-verify-'), 'unexpected scratch path'
     shutil.rmtree(scratch, ignore_errors=True)
-    print(json.dumps({'process_exited': True, 'scratch_removed': not scratch.exists(), 'evidence': manifest['out']}))
+    socket_removed = remove_socket_dir(manifest['socket_dir']) if 'socket_dir' in manifest else True
+    print(json.dumps({'process_exited': True, 'scratch_removed': not scratch.exists(), 'socket_removed': socket_removed, 'evidence': manifest['out']}))
 
 
 def main():

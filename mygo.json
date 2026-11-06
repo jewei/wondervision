@@ -1,0 +1,7 @@
+{
+  "name": "Folio",
+  "identifier": "app.folio.desktop",
+  "version": "0.1.0",
+  "main": "./cmd/folio",
+  "out": "build"
+}

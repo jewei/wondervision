@@ -27,7 +27,7 @@ The driver edits `todo.md` and `.env`, waits for the 15-second edit-triggered
 recovery, verifies private recovery for only TODO, and kills only its own process.
 Restart must offer **Recover drafts**. Recover restores unsaved text for review
 without saving the workspace file; explicit Save writes it and removes the copy.
-Finally, Save and Quit must settle all writes and cleanup before exit. See
+Finally, **Save** in the quit prompt must settle all writes and cleanup before exit. See
 `recovery-review.png`, `recovered-draft.png`, `result.json` and `cleanup.json`.
 
 `python3 scripts/verify_recovery.py` separately checks old-session ownership,
@@ -40,7 +40,7 @@ reports an error and needs another edit to retry, rather than periodic polling.
 
 Stable native names include File (menuButton), Save, Save As, Editor, Path,
 Overwrite, Overwrite Disk, Disk version, Close comparison, Recover drafts,
-Recover, Discard recovery, Save and Quit, and Close followed by the tab basename.
+Recover, Discard recovery, the quit prompt's Save, and Close followed by the tab basename.
 GTK Save As uses the **Save** accept button; Open dialogs use **Open**. A settled
 frame alone does not mean I/O completed; wait for the intended tab, bytes or view.
 

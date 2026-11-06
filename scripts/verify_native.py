@@ -237,6 +237,29 @@ class Native:
         if settle:
             self.call('idle', timeout=5000)
 
+    def click_in(self, dialog, label, role='button', settle=True):
+        """Click a control of an open alert dialog, and require it to fit inside it.
+
+        The tree is flat, so a label like "Save" can also match the toolbar; only
+        controls vertically within the dialog are considered. A control that
+        sticks out of the dialog (fixed-width MyGo AlertDialog with long labels)
+        fails here instead of being clicked.
+        """
+        d = self.wait(dialog, 'alertDialog')['bounds']
+
+        def inside_rows():
+            for n in self.nodes():
+                b = n.get('bounds')
+                if n.get('label') == label and n['role'] == role and b and d['y'] <= b['y'] + b['height'] / 2 <= d['y'] + d['height']:
+                    return n
+        n = until(inside_rows, f'{label} in {dialog}')
+        b = n['bounds']
+        assert d['x'] <= b['x'] and b['x'] + b['width'] <= d['x'] + d['width'], \
+            f'{role} {label!r} spans x={b["x"]:.0f}..{b["x"] + b["width"]:.0f}, outside dialog {dialog!r} at x={d["x"]:.0f}..{d["x"] + d["width"]:.0f}'
+        self.call('input', events=[{'type': 'click', 'x': b['x'] + b['width'] * .6, 'y': b['y'] + b['height'] / 2}])
+        if settle:
+            self.call('idle', timeout=5000)
+
     def key(self, key):
         self.call('input', events=[{'type': 'key', 'key': key}])
 
@@ -364,11 +387,11 @@ def run(binary, out):
         native.capture('before-quit')
         desktop.chord('Alt_L', 'F4')
         native.wait('Discard unsaved edits?', 'alertDialog')
-        native.click('Keep Editing', 'button')
-        assert proc.poll() is None, 'keep editing closed the app'
+        native.capture('quit-prompt')
+        native.click_in('Discard unsaved edits?', 'Cancel')
+        assert proc.poll() is None, 'Cancel closed the app'
         desktop.chord('Alt_L', 'F4')
-        native.wait('Discard unsaved edits?', 'alertDialog')
-        native.click('Discard and Quit', 'button', settle=False)
+        native.click_in('Discard unsaved edits?', 'Discard', settle=False)
         proc.wait(timeout=10)
         until(lambda: not Path(env['MYGO_AUTOMATION']).exists(), 'automation socket cleanup')
         proc, native = launch()

@@ -8,7 +8,7 @@ import (
 )
 
 func (a *App) editingDialogs(c *ui.Context) {
-	switch ui.AlertDialog(c, &a.askQuit, "Discard unsaved edits?", "Save your changes before closing WonderVision.", "Discard and Quit", "Keep Editing", "Save and Quit") {
+	switch ui.AlertDialog(c, &a.askQuit, "Discard unsaved edits?", "Save your changes before closing WonderVision.", "Discard", "Cancel", "Save") {
 	case 0:
 		a.approveDiscardQuit()
 		if !a.deferQuit() {

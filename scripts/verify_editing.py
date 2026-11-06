@@ -179,11 +179,10 @@ def run(binary, out):
         checks.append('Crash/restart offers private non-sensitive recovery for review, excludes .env, and removes the copy after Save')
         edit('# Save before quit\n')
         desktop.chord('Alt_L', 'F4')
-        native.wait('Discard unsaved edits?', 'alertDialog')
-        native.click('Save and Quit', 'button', settle=False)
+        native.click_in('Discard unsaved edits?', 'Save', settle=False)
         proc.wait(timeout=10)
-        assert (root / 'todo.md').read_text() == '# Save before quit\n' and not records(), 'Save and Quit failed to settle'
-        checks.append('Save and Quit completes filesystem work and recovery cleanup before exit')
+        assert (root / 'todo.md').read_text() == '# Save before quit\n' and not records(), 'Save on quit failed to settle'
+        checks.append('Save on quit completes filesystem work and recovery cleanup before exit')
         (out / 'filesystem-check.json').write_text(json.dumps(proof, indent=2))
         result = {'verdict': 'VERIFIED', 'checks': checks, 'display': os.environ.get('DISPLAY')}
         (out / 'result.json').write_text(json.dumps(result, indent=2))

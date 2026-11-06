@@ -108,6 +108,14 @@ jobs:
             python3 scripts/verify_editing.py --out build/verification/editing; rc=$?
             kill $wm; exit $rc'
 
+      - name: verify_m3.py
+        run: |
+          xvfb-run -a -s '-screen 0 1440x900x24' dbus-run-session -- bash -c '
+            openbox >/dev/null 2>&1 & wm=$!
+            for i in $(seq 50); do xprop -root _NET_SUPPORTING_WM_CHECK 2>/dev/null | grep -q window && break; sleep 0.1; done
+            python3 scripts/verify_m3.py --out build/verification/m3; rc=$?
+            kill $wm; exit $rc'
+
       - name: Upload evidence
         if: always()
         uses: actions/upload-artifact@v4

@@ -382,7 +382,10 @@ def run(binary, out):
         prefs = scratch / 'config' / 'wondervision' / 'preferences.json'
         until(lambda: prefs.exists() and json.loads(prefs.read_text()).get('active_file') == str(root / 'report.md'), 'preferences persisted')
         saved = json.loads(prefs.read_text())
-        assert set(saved) <= {'workspace', 'active_file', 'markdown_mode', 'sidebar_hidden', 'sidebar_width'}, saved
+        assert set(saved) <= {'workspace', 'active_file', 'markdown_mode', 'sidebar_hidden', 'sidebar_width', 'recent'}, saved
+        # Recent files are paths only: absolute, real files from this run, at most 20.
+        recent = saved.get('recent', [])
+        assert len(recent) <= 20 and all(Path(p).is_absolute() and Path(p).is_file() and Path(p).is_relative_to(scratch) for p in recent), recent
         (out / 'filesystem-check.json').write_text(json.dumps({'before': original, 'after': current, 'preferences_keys': list(saved)}, indent=2))
         native.capture('before-quit')
         desktop.chord('Alt_L', 'F4')

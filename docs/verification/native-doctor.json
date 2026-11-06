@@ -1,0 +1,24 @@
+{
+  "verified": true,
+  "pid": 21055,
+  "window": {
+    "id": 1,
+    "title": "WonderVision",
+    "kind": "content",
+    "bounds": {
+      "x": 162,
+      "y": 108,
+      "width": 1040,
+      "height": 720
+    },
+    "contentBounds": {
+      "x": 162,
+      "y": 108,
+      "width": 1040,
+      "height": 720
+    },
+    "focused": false,
+    "visible": true
+  },
+  "binary": "/workspace/wondervision/build/wondervision-e2e"
+}

@@ -1,0 +1,26 @@
+{
+  "before": {
+    ".env": "0509f0af66cfa18b1fb44e66e31cb8d4e5ce278f3f854904ade583d08e725993",
+    "AGENTS.md": "776eca039bcfb8d2f4aec65184e5502d1e2af2e1880fe61df295308b9c3e0407",
+    "config.yaml": "c39de5b01bca2c9665d9047ea9c6fd161b111d02760df8072bd6a299c696c45a",
+    "report.md": "250ca87c03e63c4a559c2a06b9854ca46fc20e73864df6de32be6c76641402e8",
+    "local.svg": "1137c86103ad8cdc3ddeea0fa5e24946c542a972eeb0dd0664985e8f7f58c024",
+    "todo.md": "02459951fe28851f83d9e1342fd549fd62bfaa5a74d48f64ed5c0fa47cb60253",
+    "docs/next.md": "205c71f96b636d762027c7ca4c1464dc908439fb27396b2b3cb2047bf929e08d"
+  },
+  "after": {
+    ".env": "0509f0af66cfa18b1fb44e66e31cb8d4e5ce278f3f854904ade583d08e725993",
+    "AGENTS.md": "776eca039bcfb8d2f4aec65184e5502d1e2af2e1880fe61df295308b9c3e0407",
+    "config.yaml": "c39de5b01bca2c9665d9047ea9c6fd161b111d02760df8072bd6a299c696c45a",
+    "report.md": "250ca87c03e63c4a559c2a06b9854ca46fc20e73864df6de32be6c76641402e8",
+    "local.svg": "1137c86103ad8cdc3ddeea0fa5e24946c542a972eeb0dd0664985e8f7f58c024",
+    "todo.md": "02459951fe28851f83d9e1342fd549fd62bfaa5a74d48f64ed5c0fa47cb60253",
+    "docs/next.md": "205c71f96b636d762027c7ca4c1464dc908439fb27396b2b3cb2047bf929e08d"
+  },
+  "preferences_keys": [
+    "workspace",
+    "active_file",
+    "markdown_mode",
+    "sidebar_width"
+  ]
+}

@@ -1,0 +1,13 @@
+=== RUN   TestFileCompletionSchedules
+    request_order_test.go:101: file requests=1 schedules=1
+    request_order_test.go:101: file requests=2 schedules=3
+    request_order_test.go:101: file requests=3 schedules=15
+    request_order_test.go:101: file requests=4 schedules=105
+--- PASS: TestFileCompletionSchedules (0.01s)
+=== RUN   TestFolderCompletionSchedules
+    request_order_test.go:138: folder requests=1 schedules=1
+    request_order_test.go:134: stale folder completion changed workspace; schedule [1 2 -1 -2] step -1: /tmp/TestFolderCompletionSchedules2911880153/001
+--- FAIL: TestFolderCompletionSchedules (0.00s)
+FAIL
+FAIL	github.com/jewei/wondervision/internal/app	0.017s
+FAIL

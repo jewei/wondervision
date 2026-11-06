@@ -1,0 +1,14 @@
+go version go1.27.3 linux/amd64
+=== RUN   TestFileCompletionSchedules
+    request_order_test.go:101: file requests=1 schedules=1
+    request_order_test.go:101: file requests=2 schedules=3
+    request_order_test.go:101: file requests=3 schedules=15
+    request_order_test.go:101: file requests=4 schedules=105
+--- PASS: TestFileCompletionSchedules (0.02s)
+=== RUN   TestFolderCompletionSchedules
+    request_order_test.go:138: folder requests=1 schedules=1
+    request_order_test.go:138: folder requests=2 schedules=3
+    request_order_test.go:138: folder requests=3 schedules=15
+--- PASS: TestFolderCompletionSchedules (0.00s)
+PASS
+ok  	github.com/jewei/wondervision/internal/app	0.032s

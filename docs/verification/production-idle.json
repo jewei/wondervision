@@ -1,0 +1,25 @@
+{
+  "source_commit": "7fcdb295d42e315bfd1de76fe6c45a1985ec81d6",
+  "seconds": 30.001,
+  "cpu_seconds": 0.0,
+  "cpu_one_core_percent": 0.0,
+  "start": {
+    "VmRSS": "57116 kB",
+    "Threads": "15"
+  },
+  "end": {
+    "VmRSS": "57116 kB",
+    "Threads": "15"
+  },
+  "file_descriptors_start": 22,
+  "file_descriptors_end": 22,
+  "workload_files": 1008,
+  "tabs": [
+    "report.md (50 KiB, Preview active)",
+    ".env",
+    "sample.go (100 KiB)"
+  ],
+  "renderer": "software",
+  "release_build": true,
+  "samples": 1
+}

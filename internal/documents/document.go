@@ -54,8 +54,15 @@ func Open(ctx context.Context, path, area string, markdownMode Mode) (*Document,
 	if err != nil {
 		return nil, err
 	}
-	if area != "" && !workspace.Contains(area, path) {
-		return nil, errors.New("file is outside the authorized folder")
+	if area != "" {
+		// Containment compares resolved paths: a folder reached through a
+		// symlink (macOS's /var is /private/var) must resolve too.
+		if area, err = workspace.Canonical(area); err != nil {
+			return nil, err
+		}
+		if !workspace.Contains(area, path) {
+			return nil, errors.New("file is outside the authorized folder")
+		}
 	}
 	before, err := os.Stat(path)
 	if err != nil {

@@ -13,6 +13,7 @@ import (
 	"github.com/egoist/mygo/ui/editor"
 	"github.com/jewei/wondervision/internal/documents"
 	"github.com/jewei/wondervision/internal/preferences"
+	"github.com/jewei/wondervision/internal/workspace"
 )
 
 // Execute queued I/O and completions separately, without a window or sleeps.
@@ -31,9 +32,14 @@ func drain(t *testing.T, a *App) {
 	t.Fatal("file operations did not settle")
 }
 
+// fixture returns a seeded workspace by its resolved path, the one the app
+// reports (macOS's temp folder is behind the /var symlink).
 func fixture(t *testing.T) string {
 	t.Helper()
-	root := t.TempDir()
+	root, err := workspace.Canonical(t.TempDir())
+	if err != nil {
+		t.Fatal(err)
+	}
 	if err := os.Mkdir(filepath.Join(root, "docs"), 0700); err != nil {
 		t.Fatal(err)
 	}
@@ -46,6 +52,41 @@ func fixture(t *testing.T) string {
 		}
 	}
 	return root
+}
+
+// A folder opened through a symlink works as its resolved folder: files open,
+// links resolve and Quick Open finds nested files.
+func TestOpenFolderThroughASymlink(t *testing.T) {
+	root := fixture(t)
+	link := filepath.Join(t.TempDir(), "link")
+	if err := os.Symlink(root, link); err != nil {
+		t.Skip(err)
+	}
+	a := newApp()
+	t.Cleanup(a.cancel)
+	a.openFolder(link)
+	drain(t, a)
+	if a.workspace == nil || a.workspace.Root != root {
+		t.Fatalf("workspace through a symlink = %+v, want root %s", a.workspace, root)
+	}
+	a.openFile(filepath.Join(link, "report.md"), a.workspace.Root, "")
+	drain(t, a)
+	d := a.active()
+	if d == nil || d.Path != filepath.Join(root, "report.md") {
+		t.Fatalf("report.md through the link did not open: %+v", d)
+	}
+	a.followLink(d, "docs/next.md")
+	drain(t, a)
+	if d = a.active(); d == nil || d.Path != filepath.Join(root, "docs", "next.md") {
+		t.Fatal("a relative link did not resolve through the symlinked folder")
+	}
+	a.files.Find("next", nil, 10) // starts the scan
+	if err := a.files.Wait(context.Background()); err != nil {
+		t.Fatal(err)
+	}
+	if got := a.files.Find("next", nil, 10).Paths; len(got) == 0 || got[0] != "docs/next.md" {
+		t.Fatalf("Quick Open in the symlinked folder found %v", got)
+	}
 }
 
 func TestExplorerRefreshKeepsRenderedStateAliveUntilNextFrame(t *testing.T) {

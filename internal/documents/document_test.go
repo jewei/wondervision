@@ -9,6 +9,7 @@ import (
 	"testing"
 
 	"github.com/egoist/mygo/ui/editor"
+	"github.com/jewei/wondervision/internal/workspace"
 )
 
 func TestOpenTextAndEditOnlyInMemory(t *testing.T) {
@@ -112,7 +113,7 @@ func TestFileIdentityAndOutsideScope(t *testing.T) {
 	if _, err := Open(context.Background(), path, t.TempDir(), Preview); err == nil {
 		t.Fatal("outside workspace file accepted")
 	}
-	if d.Area != root {
+	if canonical, _ := workspace.Canonical(root); d.Area != canonical {
 		t.Fatal("manually opened file gained sibling folder scope")
 	}
 }

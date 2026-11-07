@@ -13,6 +13,9 @@ on:
       idle_seconds:
         description: Seconds per idle phase (the spec uses 600)
         default: '600'
+      soak_hours:
+        description: Also run an idle soak for this many hours (0 = off; at most 5.5 on hosted runners)
+        default: '0'
 
 permissions:
   contents: read
@@ -57,6 +60,15 @@ jobs:
         run: |
           go build -tags mygo_noinspector -trimpath -o build/wondervision ./cmd/wondervision
           go build -tags e2e -o build/wondervision-e2e ./cmd/wondervision
+
+      - name: Linux packages depend on GTK only
+        run: |
+          go tool mygo build -platform linux/amd64 -skip-installer -o build/dist
+          depends=$(dpkg-deb -f build/dist/linux-amd64/wondervision_*_amd64.deb Depends)
+          echo "Depends: $depends"
+          # The app shows no web pages (mygo.json linux.webview: false); the
+          # package must not pull in WebKitGTK.
+          test "$depends" = "libgtk-3-0 | libgtk-3-0t64"
 
       - name: Request ordering (with mutation check)
         run: python3 scripts/verify_request_order.py --mutation-check
@@ -200,4 +212,44 @@ jobs:
         with:
           name: performance
           path: build/verification/performance/
+          if-no-files-found: ignore
+
+  soak:
+    name: Idle soak (spec §9)
+    if: github.event_name == 'workflow_dispatch' && inputs.soak_hours != '0'
+    runs-on: ubuntu-24.04
+    timeout-minutes: 350
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-go@v5
+        with:
+          go-version-file: go.mod
+
+      - name: Install GTK and a headless desktop
+        run: |
+          sudo apt-get update -qq
+          sudo DEBIAN_FRONTEND=noninteractive apt-get install -y -qq \
+            libgtk-3-0t64 libx11-6 libxtst6 x11-utils xvfb openbox at-spi2-core dbus-x11 imagemagick
+
+      - name: Build production binary
+        run: go build -tags mygo_noinspector -trimpath -o build/wondervision ./cmd/wondervision
+
+      - name: soak.py
+        env:
+          SOAK_HOURS: ${{ inputs.soak_hours }}
+        run: |
+          xvfb-run -a -s '-screen 0 1440x900x24' dbus-run-session -- bash -c '
+            openbox >/dev/null 2>&1 & wm=$!
+            for i in $(seq 50); do xprop -root _NET_SUPPORTING_WM_CHECK 2>/dev/null | grep -q window && break; sleep 0.1; done
+            python3 scripts/soak.py run --out build/verification/soak --hours "$SOAK_HOURS" --interval 300; rc=$?
+            kill $wm; exit $rc'
+          cat build/verification/soak/summary.md >> "$GITHUB_STEP_SUMMARY"
+
+      - name: Upload samples
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: soak
+          path: build/verification/soak/
           if-no-files-found: ignore

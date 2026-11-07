@@ -201,10 +201,11 @@ def idle_run(binary, scratch, workspace, out, seconds):
         p.wait(timeout=10)
 
 
-def idle_measure(acc, p, out, seconds):
+def open_tabs(acc, p):
+    """Wait for the restored report, then open .env and main.go and return to
+    the report, as a user would: real keystrokes into Quick Open (the Explorer
+    is virtualized, so these rows are off screen). Returns the open tab names."""
     until(lambda: accessible(acc, p.pid, lambda r, n: n.startswith('Markdown |')), 'restored report.md', seconds=30)
-    # Open the other reference tabs as a user would: real keystrokes into
-    # Quick Open (the Explorer is virtualized; these rows are off screen).
     desktop = Desktop()
     for name in ('.env', 'main.go', 'report.md'):
         desktop.chord('Control_L', 'p')
@@ -216,7 +217,11 @@ def idle_measure(acc, p, out, seconds):
         time.sleep(0.5)  # let the last X11 key events reach the query before Enter
         desktop.chord('Return')
         until(lambda: accessible(acc, p.pid, lambda r, n: n == name and r == 'page tab'), name + ' tab', seconds=30)
-    tabs = sorted({acc.name(n) for n in acc.walk(acc.a.atspi_get_desktop(0)) if acc.a.atspi_accessible_get_process_id(n, None) == p.pid and acc.role(n) == 'page tab'})
+    return sorted({acc.name(n) for n in acc.walk(acc.a.atspi_get_desktop(0)) if acc.a.atspi_accessible_get_process_id(n, None) == p.pid and acc.role(n) == 'page tab'})
+
+
+def idle_measure(acc, p, out, seconds):
+    tabs = open_tabs(acc, p)
     time.sleep(10)  # settle: scans, preview render, recovery timers
     subprocess.run(['import', '-window', 'root', str(out / 'idle-workload.png')], stderr=subprocess.DEVNULL)
     proc = Proc(p.pid)

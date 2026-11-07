@@ -129,14 +129,15 @@ python3 scripts/measure_performance.py --out build/verification/performance
 
 It runs the production binary for launch time and 10-minute idle CPU, memory
 and network (foreground and minimized), and the e2e binary for Quick Open
-latency on 1,000 and 10,000 files. Results are in `PERFORMANCE.md`; CI runs it
-on demand (`workflow_dispatch` with `performance` ticked).
+latency on 1,000 and 10,000 files and typing in the 100 KiB file. Results are
+in `PERFORMANCE.md`; CI runs it on demand (`workflow_dispatch` with `performance` ticked).
 
 Project-local verification skills live in `.agents/skills/` (linked from
 `.claude/skills/` for Claude Code). CI runs the checks above on every pull
 request (`.github/workflows/verify.yml`). See
 [the M2 workflow](docs/M2-WORKFLOW.md), [M2 evidence](docs/verification/M2.md),
-and [observed performance](PERFORMANCE.md). Bounded request-order tests cover
+[observed performance](PERFORMANCE.md), and
+[the spec §13 checklist traced to its evidence](docs/ACCEPTANCE.md). Bounded request-order tests cover
 143 schedules and reject two deliberately broken guard variants; they are not an
 unbounded formal proof. A separate finite TLA+ save model and three real-code
 mutations check save/edit/conflict ordering. The final filesystem race is an

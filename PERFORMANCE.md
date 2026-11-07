@@ -86,6 +86,7 @@ raw values are in `docs/verification/performance-m4.json`.
 | Quick Open cached query, 1,000 paths (median, max) | 28, 30 ms | ≤ 100 ms | met |
 | Quick Open, 10,000 paths: first scan | 0.10 s | progressive | recorded |
 | Quick Open, 10,000 paths: slowest UI answer during the scan | 4 ms | responsive | recorded |
+| Typing in the 100 KiB Go file, per key (median, p95, max of 60) | 17, 18, 19 ms | no stall > 50 ms | met |
 
 How to read it:
 
@@ -98,10 +99,15 @@ How to read it:
 - Quick Open timings run on the e2e binary through the automation socket, so
   they include a key injection and polling of the accessibility tree; even the
   "minus one poll" figure is an upper bound.
+- Typing was measured separately (`--only typing`, raw values in
+  `docs/verification/performance-typing.json`): each sample injects one
+  character into the 100 KiB file and waits until the UI is idle again, so it
+  is input to settled frame plus an automation round trip (a bare idle call
+  takes 0.2 ms). The steady ~17 ms is one frame at 60 Hz.
 - Memory is dominated by rendering the 50 KiB report in Preview. Separate
   15-second samples of that one document varied from 100 to 160 MiB on both the
   pre-M3 and current binaries, so a single run can exceed the 150 MiB target.
   M3 itself adds little: using Quick Open grew RSS by 1–7 MiB.
 
-Not measured here: the 24-hour leak test, input-to-frame latency while typing,
-macOS and Windows (compiled in CI, never run), and a real desktop with a GPU.
+Not measured here: the 24-hour leak test, macOS and Windows (compiled in CI,
+never run), and a real desktop with a GPU.

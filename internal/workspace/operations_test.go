@@ -10,8 +10,8 @@ import (
 )
 
 func TestCreateMoveDeleteWithinWorkspace(t *testing.T) {
-	if runtime.GOOS != "linux" {
-		t.Skip("exclusive rename adapter is currently Linux only")
+	if runtime.GOOS != "linux" && runtime.GOOS != "darwin" {
+		t.Skip("exclusive rename adapter is Linux and macOS only")
 	}
 	root := t.TempDir()
 	w, _ := Open(context.Background(), root)

@@ -133,7 +133,7 @@ func init() {
 		cmdReloadFromDisk:  {title: "Reload from Disk", category: "File", keywords: []string{"revert"}, available: needIdleDoc, run: func(a *App, c *ui.Context) { a.requestReload(a.active()) }},
 		cmdCompareDisk:     {title: "Compare Disk Version", category: "File", keywords: []string{"diff"}, available: needDoc, run: func(a *App, c *ui.Context) { a.compareDisk(a.active()) }},
 		cmdCloseTab:        {title: "Close Tab", category: "File", key: shortcut{cmd, ui.KeyW}, available: needIdleDoc, run: func(a *App, c *ui.Context) { a.requestClose(a.active()) }},
-		cmdNextTab: {title: "Next Tab", category: "View", key: shortcut{cmd, ui.KeyTab}, available: func(a *App) (bool, string) {
+		cmdNextTab: {title: "Next Tab", category: "View", key: shortcut{ui.Ctrl, ui.KeyTab}, available: func(a *App) (bool, string) {
 			if len(a.docs) < 2 {
 				return false, "Open another file first"
 			}

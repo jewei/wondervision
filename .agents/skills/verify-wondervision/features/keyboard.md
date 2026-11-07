@@ -16,7 +16,11 @@ name, and find text across the workspace, all without the mouse (spec §5, M3).
 - KB4. Command/Control+Shift+F opens workspace search: Enter searches (case
   insensitive unless Match case), results stream in path order and stop at 500;
   Enter on a result opens the file at that line and column.
-- KB5. Shortcuts, the File menu, toolbar buttons and the palette come from one
+- KB5. In the editor, Command/Control+F opens MyGo's find bar and Enter goes
+  to the next match; Control+H (Command+Shift+H or Command+Alt+F on macOS)
+  adds the replacement, where Enter replaces the selected match. Escape gives
+  the keyboard back to the text.
+- KB6. Shortcuts, the File menu, toolbar buttons and the palette come from one
   command table, so they always agree.
 
 ## How to get to it (user POV)
@@ -39,12 +43,23 @@ binary built from the current source, a virtual display with a window manager.
   - types `nxt` in Quick Open: the `next.md` row must appear and Enter must
     open the `next.md` tab;
   - searches `native views`: the row `report.md line 3` must appear and Enter
-    must put the cursor at `Ln 3, Col 14`.
+    must put the cursor at `Ln 3, Col 14`;
+  - in the editor, `Ctrl+F` and `Local only` then Enter must move the caret to
+    line 11, and a key after Escape must reach the text; `Ctrl+H`, `native`,
+    nine Tabs, `plain` and Enter twice must replace both matches in the buffer
+    (not on disk), and two undos restore it.
 - Inspect `palette.png`, `sidebar-hidden.png`, `quick-open.png`, `search.png`,
-  `opened-at-line.png`, `result.json` and `cleanup.json`.
+  `opened-at-line.png`, `find.png`, `replace.png`, `result.json` and
+  `cleanup.json`.
 
 ## Gotchas
 
+- MyGo draws the find bar inside the editor and does not expose it to
+  accessibility: drive it with real keys and check the caret line, the
+  editor's value and the status bar. Tab from the query visits eight buttons
+  before the replacement field.
+- MyGo's single-line fields ignore Enter with a modifier, so the find bar's
+  Cmd/Ctrl+Enter (Replace All) never fires; Replace All is the button only.
 - A modal overlay holds the keyboard: window shortcuts don't fire while one is
   open. Close it with Escape before pressing another overlay's shortcut.
 - The overlay query fields must not use AutoFocus; it breaks focus return on

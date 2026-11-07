@@ -111,3 +111,32 @@ How to read it:
 
 Not measured here: the 24-hour leak test, macOS and Windows (compiled in CI,
 never run), and a real desktop with a GPU.
+
+## Where Preview memory goes
+
+Investigated on 2026-11-07 because single runs of the M4 workload ranged from
+100 to 160 MiB against the 150 MiB target. Same container and workload, the
+production binary, RSS 15 seconds after launch, `GODEBUG=gctrace=1` for the Go
+heap and `/proc/<pid>/smaps` for the mappings:
+
+| Launch | Mode | RSS | Go heap (live) | Notable mappings |
+| --- | --- | --- | --- | --- |
+| First on a fresh X display | Preview | 138 MiB | 30 MB | `libLLVM` 40 MiB, `libgallium` 4 MiB |
+| Every later launch (5 runs) | Preview | 88 MiB | 30 MB | none of those |
+| Every launch (5 runs) | Edit | 53 MiB | 4 MB | none of those |
+
+- The run-to-run variance is Mesa's software OpenGL stack. On the first launch
+  on a fresh Xvfb display, GDK initializes GLX (it logs "screen 0 does not
+  appear to be DRI3 capable") and Mesa's llvmpipe stays mapped: 44 MiB that
+  later launches don't pay. MyGo itself draws without OpenGL here because
+  there is no GPU device. A desktop with a GPU loads its own driver instead,
+  so only a measurement on such a machine gives the number that matters.
+- WonderVision's own cost is the Go heap of the Preview: 30 MB live for the
+  50 KiB report against 4 MB in Edit. A heap profile of `markdown.View`
+  rendering that report alone holds 39 MB, 83% of it UI elements and their
+  per-element state: MyGo's Markdown view builds every block of the document,
+  visible or not, and has no virtualized mode. Preview memory therefore grows
+  with document length, about 0.75 MB per KiB of Markdown.
+- Steady state is within target (88 MiB). Chunked, virtualized preview of long
+  documents is a candidate for v0.2; it would have to keep cross-block
+  selection, heading anchors and footnotes working.

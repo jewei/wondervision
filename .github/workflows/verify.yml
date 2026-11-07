@@ -118,6 +118,23 @@ jobs:
           go vet ./...
         shell: bash
 
+  macos:
+    name: Go tests on macOS
+    runs-on: macos-15
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-go@v5
+        with:
+          go-version-file: go.mod
+
+      # Headless (ui.Tester); the native window is checked by hand on a Mac.
+      - name: go vet and go test -race
+        run: |
+          go vet ./...
+          go test -race ./...
+
   native:
     name: Native GUI verifiers
     runs-on: ubuntu-24.04

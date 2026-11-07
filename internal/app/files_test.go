@@ -8,8 +8,8 @@ import (
 )
 
 func TestFileActionsRetainDirtyBufferAndUpdatePaths(t *testing.T) {
-	if runtime.GOOS != "linux" {
-		t.Skip("exclusive move adapter is Linux only")
+	if runtime.GOOS != "linux" && runtime.GOOS != "darwin" {
+		t.Skip("exclusive rename adapter is Linux and macOS only")
 	}
 	root := fixture(t)
 	a := newApp()

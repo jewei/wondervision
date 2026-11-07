@@ -30,13 +30,20 @@ open build/dist
 **Or download the disk image CI built:** in GitHub, Actions → release → Run
 workflow (on `work`), wait for it, and download the `macos-dmg` artifact.
 
-Either way the app is only ad-hoc signed (there's no Developer ID), so macOS
-blocks it the first time. Drag WonderVision to Applications, then either
-right-click it → Open → Open, or run:
+Either way the app is only ad-hoc signed (there's no Developer ID), so a
+downloaded copy is blocked the first time with "WonderVision.app Not Opened …
+Apple could not verify …". Click **Done** (not Move to Trash). Since macOS 15,
+right-click → Open no longer gets past this. Drag WonderVision to
+Applications, then either remove the download's quarantine flag:
 
 ```bash
 xattr -dr com.apple.quarantine /Applications/WonderVision.app
 ```
+
+or open System Settings → Privacy & Security, find "WonderVision.app was
+blocked" under Security, click **Open Anyway**, enter your password, and
+confirm **Open Anyway**. A copy you built yourself is not quarantined and
+opens directly.
 
 ## 2. Make a test folder
 

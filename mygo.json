@@ -3,5 +3,14 @@
   "identifier": "io.github.jewei.wondervision",
   "version": "0.1.0",
   "main": "./cmd/wondervision",
-  "out": "build"
+  "out": "build",
+  "linux": {
+    "webview": false,
+    "command": "wondervision",
+    "comment": "Lean native Markdown and text workspace",
+    "categories": [
+      "Utility",
+      "TextEditor"
+    ]
+  }
 }

@@ -15,8 +15,43 @@ go build -tags mygo_noinspector -trimpath -o build/wondervision ./cmd/wondervisi
 ```
 
 The native MyGo template was initialized with the v0.7.4 CLI. Its entry point is
-under `cmd/wondervision`; `mygo.json` also supports `go tool mygo build` for packaging.
-No frontend, local server, or runtime network client is used.
+under `cmd/wondervision`. No frontend, local server, or runtime network client is
+used.
+
+## Package
+
+`go tool mygo build` builds production packages from `mygo.json` into `build/`:
+
+```sh
+go tool mygo build -platform linux/amd64,linux/arm64,windows/amd64 -skip-installer
+```
+
+- **Linux:**
+  - `wondervision_<version>_<arch>.deb`: installs to `/opt/wondervision`, links `/usr/bin/wondervision` and adds a menu entry. It depends on GTK 3 only; `mygo.json` sets `linux.webview: false` because the app shows no web pages.
+  - `wondervision-<version>-linux-<arch>.tar.gz` with `install.sh`: run `sh install.sh` as your user (not root) to install into `~/.local`, and `sh install.sh --uninstall` to remove it. Settings and recovery data are kept.
+  - A `PKGBUILD` for Arch Linux (`makepkg -si`).
+- **Windows:** `WonderVision.exe`; drop `-skip-installer` to also get an NSIS installer.
+- **macOS:** `-platform darwin/universal` makes a signed `.app` and `.dmg`, but only on a Mac.
+
+Checked on Linux amd64: the `.deb` installs, and the installed binary opens a usable window and contains no test automation. The tarball installs and uninstalls for a regular user with the same binary. The Windows and macOS packages haven't been run.
+
+## Platforms
+
+| Platform | Status |
+| --- | --- |
+| Linux amd64 | Built, tested and driven end to end (CI and local), packaged |
+| Linux arm64 | Built, vetted and packaged; not run |
+| macOS amd64/arm64 | Built and vetted in CI; never run. Recovery locks use `flock` as on Linux; rename/move reports "unsupported" |
+| Windows amd64/arm64 | Built and vetted in CI; never run. Crash recovery fails closed (no tested process lock) and rename/move reports "unsupported" |
+
+## Formats and limits
+
+- UTF-8 text only. Files with invalid UTF-8 or NUL bytes are refused on open, and skipped by workspace search.
+- Files over 20 MiB are refused; Markdown over 2 MiB opens in Edit and needs an explicit preview.
+- Saves keep LF or CRLF line endings, a UTF-8 BOM, the final newline and the file mode. They can't keep every ACL, owner, hard link or filesystem attribute.
+- Markdown preview renders GFM natively, with local images and links only. Remote images are never loaded and scripts never run.
+- `.env`, keys, certificates and credential/secret file names never get recovery copies.
+- Quick Open and search skip `.git`, `node_modules`, `.venv`, `vendor`, `dist`, `build`, `.next`, `target` and `__pycache__`, and never follow directory symlinks.
 
 ## Milestones
 

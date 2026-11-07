@@ -70,6 +70,34 @@ jobs:
           path: build/verification/
           if-no-files-found: ignore
 
+  cross:
+    name: Build and vet for macOS, Windows and Linux arm64
+    runs-on: ubuntu-24.04
+    timeout-minutes: 15
+    strategy:
+      fail-fast: false
+      matrix:
+        target: [darwin/amd64, darwin/arm64, windows/amd64, windows/arm64, linux/arm64]
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-go@v5
+        with:
+          go-version-file: go.mod
+
+      # Compile-only: these platforms are not run or tested here. go vet also
+      # type-checks the test files for the target.
+      - name: Build and vet ${{ matrix.target }}
+        env:
+          CGO_ENABLED: '0'
+          TARGET: ${{ matrix.target }}
+        run: |
+          export GOOS=${TARGET%/*} GOARCH=${TARGET#*/}
+          go build -tags mygo_noinspector -trimpath -o /dev/null ./cmd/wondervision
+          go build -tags e2e -o /dev/null ./cmd/wondervision
+          go vet ./...
+        shell: bash
+
   native:
     name: Native GUI verifiers
     runs-on: ubuntu-24.04

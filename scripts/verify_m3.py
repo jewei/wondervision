@@ -100,6 +100,61 @@ def run(binary, out):
         native.capture('opened-at-line')
         checks.append('Ctrl+Shift+F finds "native views" and opens report.md at line 3, column 14')
 
+        # In-editor Find and Replace (spec §5, journey 2). MyGo draws its find
+        # bar inside the editor and does not expose it to accessibility, so
+        # it is driven with real keys and checked through the caret and text.
+        def editor_text():
+            return native.find('Editor', 'textField').get('value', '')
+
+        def text_input(text):
+            native.call('input', events=[{'type': 'text', 'text': text}])
+            native.call('idle', timeout=5000)
+
+        desktop.chord('Control_L', 'Home')
+        until(lambda: status('Ln 1, Col 1'), 'caret at the start')
+        desktop.chord('Control_L', 'f')
+        native.call('idle', timeout=5000)
+        text_input('Local only')
+        desktop.chord('Return')
+        until(lambda: status('Ln 11,'), 'Find moved to "Local only" on line 11')
+        native.capture('find')
+        desktop.chord('Escape')
+        native.call('idle', timeout=5000)
+        desktop.chord('x')
+        until(lambda: status('Unsaved'), 'keystroke after closing Find reached the editor')
+        desktop.chord('Control_L', 'z')
+        until(lambda: status('Saved') and not status('Unsaved'), 'undo restored the saved text')
+        checks.append('Ctrl+F finds "Local only" on line 11; Escape returns the keyboard to the editor')
+
+        before = editor_text()
+        desktop.chord('Control_L', 'h')  # Cmd+Shift+H or Cmd+Alt+F on macOS
+        native.call('idle', timeout=5000)
+        text_input('native')
+        # Tab past the bar's eight buttons (match case, whole word, regex, in
+        # selection, previous, next, toggle replace, close) to the replacement.
+        for _ in range(9):
+            desktop.chord('Tab')
+        native.call('idle', timeout=5000)
+        text_input('plain')
+        # Enter replaces the selected match and moves to the next. (MyGo's
+        # Cmd/Ctrl+Enter for Replace All never reaches a single-line field,
+        # so Replace All is the button only; see README.)
+        desktop.chord('Return')
+        until(lambda: 'plain views' in editor_text(), 'Replace changed line 3')
+        desktop.chord('Return')
+        until(lambda: 'plain GFM' in editor_text(), 'Replace changed line 10')
+        native.capture('replace')
+        after = editor_text()
+        assert after == before.replace('native', 'plain').replace('Native', 'plain'), 'Replace changed more or less than the two matches'
+        assert status('Unsaved'), 'replacing did not mark the document dirty'
+        assert 'plain' not in (root / 'report.md').read_text(), 'Replace wrote to disk before Save'
+        desktop.chord('Escape')
+        native.call('idle', timeout=5000)
+        desktop.chord('Control_L', 'z')
+        desktop.chord('Control_L', 'z')
+        until(lambda: editor_text() == before and status('Saved'), 'undo takes back both replacements')
+        checks.append('Ctrl+H, a query, the replacement and Enter twice replace both matches (case-insensitive) in the buffer only; undo restores it')
+
         result = {'verdict': 'VERIFIED', 'checks': checks}
         (out / 'result.json').write_text(json.dumps(result, indent=2))
         print(json.dumps(result, indent=2))

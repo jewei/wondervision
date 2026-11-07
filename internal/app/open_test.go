@@ -140,11 +140,11 @@ func TestOpenViewAndLazyExplorer(t *testing.T) {
 		t.Fatal("plain file incurred a preview")
 	}
 	a.active().Editor.Select(2, 2)
-	tt.Key(ui.Cmd, ui.KeyTab)
+	tt.Key(ui.Ctrl, ui.KeyTab)
 	if a.active() != d || d.Buffer.String()[:16] != "# Updated report" {
 		t.Fatal("tab switching lost the editing session")
 	}
-	tt.Key(ui.Cmd, ui.KeyTab)
+	tt.Key(ui.Ctrl, ui.KeyTab)
 	if a.active().Editor.Cursor() != 2 {
 		t.Fatal("tab switching lost cursor state")
 	}

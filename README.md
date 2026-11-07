@@ -1,7 +1,8 @@
 # WonderVision
 
 A native, single-window Go text workspace using MyGo. This repository implements
-M0–M3 of [the specification](spec.md).
+M0–M4 of [the specification](spec.md). Changes are listed in
+[CHANGELOG.md](CHANGELOG.md).
 
 ## Build and run
 
@@ -33,6 +34,12 @@ go tool mygo build -platform linux/amd64,linux/arm64,windows/amd64 -skip-install
 - **Windows:** `WonderVision.exe`; drop `-skip-installer` to also get an NSIS installer.
 - **macOS:** `-platform darwin/universal` makes a signed `.app` and `.dmg`, but only on a Mac.
 
+Releases: pushing a tag `v<version>` (matching `mygo.json`) runs
+`.github/workflows/release.yml`, which tests, builds the Linux packages with
+`SHA256SUMS`, and drafts a GitHub release with the notes from this version's
+`CHANGELOG.md` section. Running the workflow by hand builds the same files and
+an ad-hoc-signed macOS disk image as artifacts, without a release.
+
 Checked on Linux amd64: the `.deb` installs, and the installed binary opens a usable window and contains no test automation. The tarball installs and uninstalls for a regular user with the same binary. The Windows and macOS packages haven't been run.
 
 ## Platforms
@@ -41,7 +48,7 @@ Checked on Linux amd64: the `.deb` installs, and the installed binary opens a us
 | --- | --- |
 | Linux amd64 | Built, tested and driven end to end (CI and local), packaged |
 | Linux arm64 | Built, vetted and packaged; not run |
-| macOS amd64/arm64 | Built and vetted in CI; never run. Recovery locks use `flock` as on Linux; rename/move reports "unsupported" |
+| macOS amd64/arm64 | Built in CI, and the Go tests (headless) pass on macOS 15 arm64; the native window has not been checked yet: see [docs/MACOS-TESTING.md](docs/MACOS-TESTING.md). Recovery locks use `flock` and rename/move uses `renameatx_np(RENAME_EXCL)` |
 | Windows amd64/arm64 | Built and vetted in CI; never run. Crash recovery fails closed (no tested process lock) and rename/move reports "unsupported" |
 
 ## Formats and limits
@@ -51,6 +58,7 @@ Checked on Linux amd64: the `.deb` installs, and the installed binary opens a us
 - Saves keep LF or CRLF line endings, a UTF-8 BOM, the final newline and the file mode. They can't keep every ACL, owner, hard link or filesystem attribute.
 - Markdown preview renders GFM natively, with local images and links only. Remote images are never loaded and scripts never run.
 - `.env`, keys, certificates and credential/secret file names never get recovery copies.
+- In the editor's find bar, Replace All is the button only: MyGo's Ctrl/Cmd+Enter shortcut for it never reaches the field.
 - Quick Open and search skip `.git`, `node_modules`, `.venv`, `vendor`, `dist`, `build`, `.next`, `target` and `__pycache__`, and never follow directory symlinks.
 
 ## Milestones

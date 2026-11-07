@@ -1,0 +1,98 @@
+name: release
+
+# A tag v* builds the packages and drafts a GitHub release with the Linux
+# packages and their checksums; publish the draft by hand. Run it from the
+# Actions tab (workflow_dispatch) to build the same packages, plus a macOS
+# disk image for testing, as workflow artifacts without a release.
+
+on:
+  push:
+    tags: ['v*']
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  linux:
+    name: Linux packages
+    runs-on: ubuntu-24.04
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-go@v5
+        with:
+          go-version-file: go.mod
+
+      - name: Version matches the tag
+        if: startsWith(github.ref, 'refs/tags/v')
+        run: |
+          version=$(python3 -c 'import json; print(json.load(open("mygo.json"))["version"])')
+          test "v$version" = "$GITHUB_REF_NAME" || { echo "mygo.json version $version does not match tag $GITHUB_REF_NAME"; exit 1; }
+
+      - name: Test
+        run: go test ./...
+
+      - name: Build
+        run: |
+          go tool mygo build -platform linux/amd64,linux/arm64 -skip-installer -o build/dist
+          mkdir -p build/release
+          cp build/dist/linux-*/*.deb build/dist/linux-*/*.tar.gz build/release/
+          (cd build/release && sha256sum * > SHA256SUMS)
+          ls -l build/release
+
+      - name: Packages depend on GTK only
+        run: |
+          depends=$(dpkg-deb -f build/release/wondervision_*_amd64.deb Depends)
+          test "$depends" = "libgtk-3-0 | libgtk-3-0t64"
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: linux-packages
+          path: build/release/
+
+  macos:
+    name: macOS disk image (untested)
+    runs-on: macos-15
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-go@v5
+        with:
+          go-version-file: go.mod
+
+      # Ad-hoc signed: no Developer ID is configured, so Gatekeeper asks
+      # before it opens. Not attached to releases until macOS is tested.
+      - name: Build
+        run: go tool mygo build -platform darwin/universal -o build/dist
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: macos-dmg
+          path: build/dist/**/*.dmg
+
+  release:
+    name: Draft the release
+    if: startsWith(github.ref, 'refs/tags/v')
+    needs: [linux]
+    runs-on: ubuntu-24.04
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/download-artifact@v4
+        with:
+          name: linux-packages
+          path: release
+
+      - name: Draft
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          version=${GITHUB_REF_NAME#v}
+          awk -v v="$version" '$0 ~ "^## " v {on=1; next} /^## / {on=0} on' CHANGELOG.md > notes.md
+          test -s notes.md || { echo "CHANGELOG.md has no section for $version"; exit 1; }
+          gh release create "$GITHUB_REF_NAME" release/* --draft --title "WonderVision $version" --notes-file notes.md

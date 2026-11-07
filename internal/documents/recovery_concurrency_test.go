@@ -128,3 +128,39 @@ func TestListRemovesOnlyOrphanedRecoveryTemps(t *testing.T) {
 		t.Fatalf("List kept an orphaned temp file: %v", err)
 	}
 }
+
+// Sessions that create the recovery lock at the same moment each get the
+// lock or ErrRecoveryBusy, never another error.
+func TestRecoveryLockCreationRace(t *testing.T) {
+	for range 200 {
+		dir := t.TempDir()
+		root, err := os.OpenRoot(dir)
+		if err != nil {
+			t.Fatal(err)
+		}
+		start := make(chan struct{})
+		errs := make(chan error, 8)
+		var wg sync.WaitGroup
+		for range 8 {
+			wg.Add(1)
+			go func() {
+				defer wg.Done()
+				<-start
+				f, err := recoveryLock(context.Background(), root)
+				if err == nil {
+					f.Close()
+				}
+				errs <- err
+			}()
+		}
+		close(start)
+		wg.Wait()
+		close(errs)
+		root.Close()
+		for err := range errs {
+			if err != nil && !errors.Is(err, ErrRecoveryBusy) {
+				t.Fatalf("racing lock creation: %v", err)
+			}
+		}
+	}
+}

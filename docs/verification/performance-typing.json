@@ -1,0 +1,10 @@
+{
+  "keystrokes": 60,
+  "per_key_s_median_p95_max": [
+    0.0172,
+    0.018,
+    0.0187
+  ],
+  "idle_round_trip_s_median": 0.0002,
+  "note": "One injected character plus a wait until the UI is idle, so each sample includes an automation round trip."
+}

@@ -302,6 +302,61 @@ def quick_open(e2e, scratch, workspace, out, trials, query, expect):
         remove_socket_dir(sockets)
 
 
+def typing_latency(e2e, scratch, workspace, out, keystrokes=60):
+    """Type into the 100 KiB code file through the automation socket: each
+    sample is one injected character plus a wait until the UI is idle again.
+    A bare idle call's round trip is measured too, to show the overhead."""
+    env = env_for(scratch, workspace, workspace / 'main.go')
+    sockets = socket_dir()
+    env['MYGO_AUTOMATION'] = str(sockets / 'app.sock')
+    p = subprocess.Popen([str(e2e)], env=env, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
+    try:
+        until(lambda: Path(env['MYGO_AUTOMATION']).exists() or p.poll() is not None, 'automation socket')
+        native = Native(Path(env['MYGO_AUTOMATION']), out)
+
+        def editor():
+            try:
+                return native.find('Editor', 'textField')
+            except AssertionError as e:
+                if 'no_window' in str(e):
+                    return None
+                raise
+        until(editor, 'main.go editor', seconds=30)
+        native.click('Editor', 'textField')
+        native.call('idle', timeout=5000)
+        idle = []
+        for _ in range(10):
+            t = time.monotonic()
+            native.call('idle', timeout=5000)
+            idle.append(time.monotonic() - t)
+        keys = []
+        for i in range(keystrokes):
+            t = time.monotonic()
+            native.call('input', events=[{'type': 'text', 'text': 'xyz'[i % 3]}])
+            native.call('idle', timeout=5000)
+            keys.append(time.monotonic() - t)
+        node = native.find('Editor', 'textField')
+        assert node and 'xyz' in node.get('value', ''), 'typed text did not reach the editor'
+        keys.sort()
+        return {
+            'keystrokes': keystrokes,
+            'per_key_s_median_p95_max': [round(statistics.median(keys), 4), round(keys[int(0.95 * (len(keys) - 1))], 4), round(keys[-1], 4)],
+            'idle_round_trip_s_median': round(statistics.median(idle), 4),
+            'note': 'One injected character plus a wait until the UI is idle, so each sample includes an automation round trip.',
+        }
+    finally:
+        # The typed edits leave main.go dirty, so the quit guard keeps the
+        # window open after SIGTERM; kill it then.
+        if p.poll() is None:
+            p.terminate()
+            try:
+                p.wait(timeout=5)
+            except subprocess.TimeoutExpired:
+                p.kill()
+                p.wait(timeout=10)
+        remove_socket_dir(sockets)
+
+
 def verdict(value, target, lower_is_better=True):
     ok = value <= target if lower_is_better else value >= target
     return 'met' if ok else 'MISSED'
@@ -315,7 +370,20 @@ def main():
     parser.add_argument('--idle-seconds', type=int, default=600, help='per idle phase (spec: 600)')
     parser.add_argument('--launches', type=int, default=5)
     parser.add_argument('--trials', type=int, default=5)
+    parser.add_argument('--only', choices=['typing'], help='run one phase alone')
     args = parser.parse_args()
+    if args.only == 'typing':
+        out = args.out.resolve()
+        out.mkdir(parents=True, exist_ok=False)
+        scratch = Path(tempfile.mkdtemp(prefix='wondervision-perf-'))
+        try:
+            seed_reference(scratch / 'reference')
+            result = typing_latency(args.e2e.resolve(), scratch / 'typing', scratch / 'reference', out)
+        finally:
+            shutil.rmtree(scratch, ignore_errors=True)
+        (out / 'typing.json').write_text(json.dumps(result, indent=2))
+        print(json.dumps(result, indent=2))
+        return
     out = args.out.resolve()
     out.mkdir(parents=True, exist_ok=False)
     scratch = Path(tempfile.mkdtemp(prefix='wondervision-perf-'))
@@ -336,6 +404,7 @@ def main():
         idle = keep('idle', idle_run(args.binary.resolve(), scratch / 'idle', ref, out, args.idle_seconds))
         qo_ref = keep('quick_open_reference', quick_open(args.e2e.resolve(), scratch / 'qo-ref', ref, out, args.trials, 'note-42-007', 'note-42-007.txt'))
         qo_big = keep('quick_open_10000', quick_open(args.e2e.resolve(), scratch / 'qo-big', big, out, 2, 'file-09999', 'file-09999.md'))
+        typing = keep('typing', typing_latency(args.e2e.resolve(), scratch / 'typing', ref, out))
     finally:
         shutil.rmtree(scratch, ignore_errors=True)
 
@@ -350,6 +419,7 @@ def main():
         'idle': idle,
         'quick_open_reference': qo_ref,
         'quick_open_10000': qo_big,
+        'typing_100k': typing,
     }
     (out / 'results.json').write_text(json.dumps(results, indent=2))
 
@@ -372,6 +442,7 @@ def main():
         ('10,000 paths: first scan', f"{qo_big['first_scan_s']} s", 'progressive', 'recorded'),
         ('10,000 paths: slowest UI answer during the scan', f"{qo_big['ui_answer_during_scan_s_max'] * 1000:.0f} ms", 'responsive', 'recorded'),
         ('10,000 paths: cached query (median)', f"{qo_big['cached_query_s_median_max'][0] * 1000:.0f} ms", '—', 'recorded'),
+        ('Typing in the 100 KiB file, per key (median, p95, max)', ', '.join(f'{v * 1000:.0f}' for v in typing['per_key_s_median_p95_max']) + ' ms', 'no stall > 50 ms', verdict(typing['per_key_s_median_p95_max'][2], 0.05)),
     ]
     md = ['| Metric | Observed | Target | Result |', '| --- | --- | --- | --- |'] + [f'| {a} | {b} | {c} | {d} |' for a, b, c, d in rows]
     summary = '\n'.join(md) + f"\n\nOpen tabs during idle: {', '.join(idle['tabs'])}. Quick Open timings include automation round trips (upper bounds).\n"

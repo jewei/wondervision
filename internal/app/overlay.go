@@ -152,13 +152,15 @@ func (a *App) submit(field ui.Element, n int, choose func(int)) {
 }
 
 // queryField builds the query field and resets the selection when the query
-// changes. It must not use AutoFocus: the dialog already moves the focus into
+// changes. It is a TextInput, not a SearchField: a SearchField takes Escape to
+// clear its text, so closing an overlay with a query typed took two presses
+// (TestEscapeClosesTheOverlayWithAQuery). It must not use AutoFocus: the dialog already moves the focus into
 // its first field, and AutoFocus takes the focus before ui.DialogBase records
 // who had it, so Escape could no longer give it back to the editor
 // (TestEscapeReturnsFocusToTheEditor).
 func (a *App) queryField(c *ui.Context, label, placeholder string) ui.Element {
 	o := &a.overlay
-	f := ui.SearchField(c, &o.query).Label(label).Placeholder(placeholder)
+	f := ui.TextInput(c, &o.query).Label(label).Placeholder(placeholder)
 	if o.query != o.shown {
 		o.shown, o.selected = o.query, 0
 		o.list.ScrollIntoView(0)

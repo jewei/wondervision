@@ -2,6 +2,9 @@
 
 package workspace
 
-import "os"
+import (
+	"errors"
+	"os"
+)
 
-func renameExclusive(*os.Root, string, *os.Root, string) error { return os.ErrUnsupported }
+func renameExclusive(*os.Root, string, *os.Root, string) error { return errors.ErrUnsupported }

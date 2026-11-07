@@ -2,7 +2,10 @@
 
 package documents
 
-import "os"
+import (
+	"errors"
+	"os"
+)
 
 // Fail closed until this platform has a tested process-lock adapter.
-func lockRecoveryFile(*os.File) error { return os.ErrUnsupported }
+func lockRecoveryFile(*os.File) error { return errors.ErrUnsupported }

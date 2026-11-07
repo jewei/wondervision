@@ -37,8 +37,9 @@ Edits stay in memory until Save. Recovery copies follow non-sensitive edits afte
 15 seconds of quiescence and are reviewed after a crash; `.env`, keys, certificates,
 and credential/secret filenames have recovery disabled. Files over 20 MiB
 are refused; Markdown over 2 MiB starts in Edit and requires an explicit preview
-action. Only UTF-8 text is supported. The Linux desktop was exercised; macOS and
-Windows have not been built or run in this pass.
+action. Only UTF-8 text is supported. The Linux desktop was exercised. macOS and
+Windows (amd64 and arm64) are compiled and vetted in CI but have never been run;
+recovery locking fails closed on Windows, and rename/move is Linux-only.
 
 Preferences contain paths and UI choices in the OS config directory under
 `wondervision/preferences.json`. Private recovery copies live under the OS cache

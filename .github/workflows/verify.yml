@@ -20,9 +20,12 @@ on:
 permissions:
   contents: read
 
+# A push cancels the older run for the same branch. Manual runs (the
+# performance measurement and the soak, which take hours) have a group of
+# their own, so merging to the branch never cancels them.
 concurrency:
-  group: verify-${{ github.ref }}
-  cancel-in-progress: true
+  group: verify-${{ github.event_name == 'workflow_dispatch' && 'manual' || 'auto' }}-${{ github.ref }}
+  cancel-in-progress: ${{ github.event_name != 'workflow_dispatch' }}
 
 jobs:
   checks:
@@ -268,7 +271,16 @@ jobs:
             for i in $(seq 50); do xprop -root _NET_SUPPORTING_WM_CHECK 2>/dev/null | grep -q window && break; sleep 0.1; done
             python3 scripts/soak.py run --out build/verification/soak --hours "$SOAK_HOURS" --interval 300; rc=$?
             kill $wm; exit $rc'
+
+      # Also when the soak is cut short: summarize the samples taken so far
+      # into the log and the step summary, which outlive the runner.
+      - name: Summarize
+        if: always()
+        run: |
+          test -s build/verification/soak/samples.jsonl || { echo "no samples"; exit 0; }
+          python3 scripts/soak.py summarize build/verification/soak
           cat build/verification/soak/summary.md >> "$GITHUB_STEP_SUMMARY"
+          cat build/verification/soak/summary.json
 
       - name: Upload samples
         if: always()

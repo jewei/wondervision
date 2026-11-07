@@ -1,0 +1,146 @@
+{
+  "machine": {
+    "platform": "Linux-6.18.44-fc-v300-x86_64-with-glibc2.39",
+    "cpus": 4,
+    "python": "3.13.18",
+    "renderer": "MyGo software renderer under Xvfb + openbox (no GPU)"
+  },
+  "source": "3cda8b90943a078d8c56480d315382e0fa00c240",
+  "launch": {
+    "cold": {
+      "usable_s": 0.619,
+      "restored_s": 2.278
+    },
+    "warm_runs": [
+      {
+        "usable_s": 0.445,
+        "restored_s": 1.923
+      },
+      {
+        "usable_s": 0.446,
+        "restored_s": 2.193
+      },
+      {
+        "usable_s": 0.44,
+        "restored_s": 2.098
+      },
+      {
+        "usable_s": 0.428,
+        "restored_s": 2.183
+      },
+      {
+        "usable_s": 0.401,
+        "restored_s": 2.139
+      }
+    ],
+    "warm_usable_s_median": 0.44,
+    "warm_restored_s_median": 2.139
+  },
+  "idle": {
+    "tabs": [
+      ".env",
+      "main.go",
+      "report.md"
+    ],
+    "phases": [
+      {
+        "phase": "foreground",
+        "seconds": 600.0,
+        "cpu_percent_one_core": 0.02,
+        "cpu_seconds": 0.12,
+        "rss_kib_start_end": [
+          138832,
+          108908
+        ],
+        "rss_kib_max": 138836,
+        "threads_start_end": [
+          15,
+          15
+        ],
+        "fds_start_end": [
+          20,
+          20
+        ],
+        "internet_sockets_max": 0,
+        "trend_rss_kib": [
+          138832,
+          138832,
+          138836,
+          121352,
+          121380,
+          108904,
+          108908,
+          108908,
+          108908,
+          108908,
+          108908
+        ]
+      },
+      {
+        "phase": "minimized",
+        "seconds": 600.0,
+        "cpu_percent_one_core": 0.015,
+        "cpu_seconds": 0.09,
+        "rss_kib_start_end": [
+          108908,
+          108784
+        ],
+        "rss_kib_max": 108912,
+        "threads_start_end": [
+          15,
+          15
+        ],
+        "fds_start_end": [
+          20,
+          20
+        ],
+        "internet_sockets_max": 0,
+        "trend_rss_kib": [
+          108908,
+          108908,
+          108912,
+          108784,
+          108784,
+          108784,
+          108784,
+          108784,
+          108784,
+          108784,
+          108784
+        ]
+      }
+    ]
+  },
+  "quick_open_reference": {
+    "trials": 5,
+    "appear_s_median_max": [
+      0.119,
+      0.135
+    ],
+    "poll_s_median": 0.046,
+    "appear_minus_poll_s_median": 0.073,
+    "cached_query_s_median_max": [
+      0.028,
+      0.03
+    ],
+    "first_scan_s": 0.019,
+    "ui_answer_during_scan_s_max": 0.019,
+    "note": "Includes automation round trips and accessibility-tree serialization, so these are upper bounds."
+  },
+  "quick_open_10000": {
+    "trials": 2,
+    "appear_s_median_max": [
+      0.03,
+      0.053
+    ],
+    "poll_s_median": 0.001,
+    "appear_minus_poll_s_median": 0.029,
+    "cached_query_s_median_max": [
+      0.008,
+      0.008
+    ],
+    "first_scan_s": 0.101,
+    "ui_answer_during_scan_s_max": 0.004,
+    "note": "Includes automation round trips and accessibility-tree serialization, so these are upper bounds."
+  }
+}

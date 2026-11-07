@@ -56,3 +56,52 @@ Not measured in this pass: 10-minute foreground/minimized CPU, 24-hour memory
 trend, launch latency, input-to-frame latency, or network traffic. Quick Open and
 workspace search do not exist yet. These short observations do not certify the
 full performance contract or exclude a long-term leak.
+
+## M4: the spec §9 contract
+
+Measured on 2026-11-07 with `scripts/measure_performance.py` from source commit
+`3cda8b90943a078d8c56480d315382e0fa00c240`. Environment: a Linux x86_64
+container (4 logical CPUs), Xvfb with openbox, MyGo's software renderer (no
+GPU), Go 1.27.3, MyGo v0.7.4. This is not the spec's reference desktop: the
+numbers catch regressions; they don't certify a machine a person uses.
+
+Workload (spec §9): 1,000 text/Markdown files across 50 folders, a 50 KiB
+Markdown report open in Preview, `.env` and a 100 KiB Go file open, no input,
+settled for 10 seconds. The production binary (no automation linked) restored
+the workspace from preferences; the other two tabs were opened with real X11
+keystrokes into Quick Open. See `docs/verification/performance-m4-workload.png`;
+raw values are in `docs/verification/performance-m4.json`.
+
+| Metric | Observed | Target | Result |
+| --- | --- | --- | --- |
+| Warm launch to usable window (median of 5) | 0.44 s (cold: 0.62 s) | ≤ 1.5 s | met |
+| Warm launch to restored report in Preview (median) | 2.14 s | — | recorded |
+| Idle CPU, foreground, 600 s | 0.02% of one core (0.12 s CPU) | < 0.5% | met |
+| Idle CPU, minimized, 600 s | 0.015% of one core (0.09 s CPU) | < 0.5% | met |
+| Resident memory, foreground (max; end) | 135.6 MiB; 106.4 MiB | ≤ 150 MiB | met |
+| Resident memory, minimized (start → end) | 106.4 → 106.2 MiB | ≤ 150 MiB | met |
+| Internet sockets, both phases | 0 | zero network | met |
+| Threads / file descriptors, both phases | 15 → 15 / 20 → 20 | no growth | met |
+| Quick Open appears (median, minus one 46 ms accessibility-tree poll) | 73 ms (119 ms as measured) | ≤ 100 ms | met |
+| Quick Open cached query, 1,000 paths (median, max) | 28, 30 ms | ≤ 100 ms | met |
+| Quick Open, 10,000 paths: first scan | 0.10 s | progressive | recorded |
+| Quick Open, 10,000 paths: slowest UI answer during the scan | 4 ms | responsive | recorded |
+
+How to read it:
+
+- Launch is timed from exec until AT-SPI exposes the enabled Open File button;
+  "restored" waits for the active document's status line.
+- CPU is the process's utime + stime from `/proc` (100 Hz accounting) over each
+  phase; memory is VmRSS sampled every minute. During the foreground phase RSS
+  fell from 135.6 to 106.4 MiB as Go returned memory to the OS; the minimized
+  phase stayed flat.
+- Quick Open timings run on the e2e binary through the automation socket, so
+  they include a key injection and polling of the accessibility tree; even the
+  "minus one poll" figure is an upper bound.
+- Memory is dominated by rendering the 50 KiB report in Preview. Separate
+  15-second samples of that one document varied from 100 to 160 MiB on both the
+  pre-M3 and current binaries, so a single run can exceed the 150 MiB target.
+  M3 itself adds little: using Quick Open grew RSS by 1–7 MiB.
+
+Not measured here: the 24-hour leak test, input-to-frame latency while typing,
+macOS and Windows (compiled in CI, never run), and a real desktop with a GPU.

@@ -236,7 +236,16 @@ def quick_open(e2e, scratch, workspace, out, trials, query, expect):
     try:
         until(lambda: Path(env['MYGO_AUTOMATION']).exists() or p.poll() is not None, 'automation socket')
         native = Native(Path(env['MYGO_AUTOMATION']), out)
-        native.wait('Open File')
+
+        def window_ready():
+            # The automation socket comes up before the window exists.
+            try:
+                return native.find('Open File')
+            except AssertionError as e:
+                if 'no_window' in str(e):
+                    return None
+                raise
+        until(window_ready, 'window with Open File', seconds=30)
         time.sleep(2)
         # One accessibility-tree fetch is the cost of each poll below; report
         # appearance with and without it.
@@ -310,11 +319,18 @@ def main():
         seed_reference(ref)
         big = scratch / 'large'
         seed_large(big)
-        launches = launch_times(args.binary.resolve(), scratch / 'launch', ref, ref / 'report.md', args.launches)
+        partial = {}
+
+        def keep(name, value):
+            # Save after each phase so a later failure can't lose earlier results.
+            partial[name] = value
+            (out / 'partial.json').write_text(json.dumps(partial, indent=2))
+            return value
+        launches = keep('launch', launch_times(args.binary.resolve(), scratch / 'launch', ref, ref / 'report.md', args.launches))
         warm = launches[1:]
-        idle = idle_run(args.binary.resolve(), scratch / 'idle', ref, out, args.idle_seconds)
-        qo_ref = quick_open(args.e2e.resolve(), scratch / 'qo-ref', ref, out, args.trials, 'note-42-007', 'note-42-007.txt')
-        qo_big = quick_open(args.e2e.resolve(), scratch / 'qo-big', big, out, 2, 'file-09999', 'file-09999.md')
+        idle = keep('idle', idle_run(args.binary.resolve(), scratch / 'idle', ref, out, args.idle_seconds))
+        qo_ref = keep('quick_open_reference', quick_open(args.e2e.resolve(), scratch / 'qo-ref', ref, out, args.trials, 'note-42-007', 'note-42-007.txt'))
+        qo_big = keep('quick_open_10000', quick_open(args.e2e.resolve(), scratch / 'qo-big', big, out, 2, 'file-09999', 'file-09999.md'))
     finally:
         shutil.rmtree(scratch, ignore_errors=True)
 

@@ -84,6 +84,19 @@ a time. All test workspaces and preferences are isolated.
 The save-model helper additionally needs Java 11+ and downloads a checksum-pinned
 development-only TLC jar. The application gains no runtime dependency.
 
+To measure the spec §9 performance contract (about 25 minutes; ImageMagick's
+`import` is used for screenshots):
+
+```sh
+go build -tags mygo_noinspector -trimpath -o build/wondervision ./cmd/wondervision
+python3 scripts/measure_performance.py --out build/verification/performance
+```
+
+It runs the production binary for launch time and 10-minute idle CPU, memory
+and network (foreground and minimized), and the e2e binary for Quick Open
+latency on 1,000 and 10,000 files. Results are in `PERFORMANCE.md`; CI runs it
+on demand (`workflow_dispatch` with `performance` ticked).
+
 Project-local verification skills live in `.agents/skills/` (linked from
 `.claude/skills/` for Claude Code). CI runs the checks above on every pull
 request (`.github/workflows/verify.yml`). See

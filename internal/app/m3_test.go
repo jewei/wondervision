@@ -307,3 +307,17 @@ func TestEscapeReturnsFocusToTheEditor(t *testing.T) {
 		t.Fatalf("after Escape the keystroke did not reach the editor (overlay kind %d)", a.overlay.kind)
 	}
 }
+
+// Spec §5: Escape closes the overlay, even with a query typed.
+func TestEscapeClosesTheOverlayWithAQuery(t *testing.T) {
+	a := newApp()
+	t.Cleanup(a.cancel)
+	tt := ui.NewTester(a.view, 1040, 720)
+	tt.Key(ui.Cmd|ui.Shift, ui.KeyP)
+	tt.Type("toggle")
+	tt.Key(0, ui.KeyEscape)
+	tt.Frame()
+	if a.overlay.kind != noOverlay {
+		t.Fatalf("one Escape with a query typed left the overlay open (query %q)", a.overlay.query)
+	}
+}

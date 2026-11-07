@@ -134,6 +134,9 @@ func ResolveLocal(area, document, raw string) (string, string, error) {
 	if err != nil {
 		return "", "", err
 	}
+	if area, err = Canonical(area); err != nil {
+		return "", "", err
+	}
 	if !Contains(area, path) {
 		return "", "", errors.New("linked file is outside the authorized folder")
 	}

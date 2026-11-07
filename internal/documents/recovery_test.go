@@ -35,7 +35,7 @@ func TestPreviousSessionDraftRequiresReview(t *testing.T) {
 	if err = fresh.Write(ctx, plan); !errors.Is(err, ErrUnreviewedRecovery) {
 		t.Fatalf("unreviewed draft replaced: %v", err)
 	}
-	if err = fresh.Remove(ctx, path); err != nil {
+	if err = fresh.Remove(ctx, d.Path); err != nil {
 		t.Fatal(err)
 	}
 	recovered, err := fresh.Load(ctx, records[0])
@@ -43,7 +43,7 @@ func TestPreviousSessionDraftRequiresReview(t *testing.T) {
 		t.Fatalf("old draft lost: %v", err)
 	}
 	// Recovering is explicit ownership of this exact copy, even before its next timer fires.
-	if claim, ok := recovered.RecoveryClaim(path); !ok {
+	if claim, ok := recovered.RecoveryClaim(d.Path); !ok {
 		t.Fatal("recovered copy has no cleanup claim")
 	} else if err = fresh.Discard(ctx, claim); err != nil {
 		t.Fatal(err)
@@ -131,7 +131,7 @@ func TestRecoveryPrivateRoundTripAndRemoval(t *testing.T) {
 	if err = store.Write(context.Background(), plan); err != nil {
 		t.Fatal(err)
 	}
-	info, _ := os.Stat(filepath.Join(store.Dir, recoveryName(path)))
+	info, _ := os.Stat(filepath.Join(store.Dir, recoveryName(d.Path)))
 	if info.Mode().Perm()&0077 != 0 {
 		t.Fatal("recovery copy is not private")
 	}
@@ -150,7 +150,7 @@ func TestRecoveryPrivateRoundTripAndRemoval(t *testing.T) {
 	if string(raw) != "original\r\n" {
 		t.Fatal("recovery wrote the workspace file")
 	}
-	if err = store.Remove(context.Background(), path); err != nil {
+	if err = store.Remove(context.Background(), d.Path); err != nil {
 		t.Fatal(err)
 	}
 	records, err = store.List(context.Background())
@@ -203,7 +203,10 @@ func TestRecoveryRetainsExternalConflictAndRejectsDamage(t *testing.T) {
 	if err != ErrConflict {
 		t.Fatal("recovered draft overwrote changes made after its baseline")
 	}
-	f, _ := os.OpenFile(filepath.Join(store.Dir, recoveryName(path)), os.O_APPEND|os.O_WRONLY, 0)
+	f, err := os.OpenFile(filepath.Join(store.Dir, recoveryName(d.Path)), os.O_APPEND|os.O_WRONLY, 0)
+	if err != nil {
+		t.Fatal(err)
+	}
 	f.WriteString("damage")
 	f.Close()
 	if _, err = store.Load(context.Background(), records[0]); err == nil {

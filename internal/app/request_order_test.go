@@ -7,6 +7,7 @@ import (
 	"testing"
 
 	"github.com/egoist/mygo/ui/editor"
+	"github.com/jewei/wondervision/internal/workspace"
 )
 
 // Positive steps issue requests in user order; negative steps deliver any
@@ -103,7 +104,14 @@ func TestFileCompletionSchedules(t *testing.T) {
 }
 
 func TestFolderCompletionSchedules(t *testing.T) {
-	roots := []string{t.TempDir(), t.TempDir(), t.TempDir()}
+	var roots []string
+	for range 3 {
+		root, err := workspace.Canonical(t.TempDir()) // the app reports resolved roots
+		if err != nil {
+			t.Fatal(err)
+		}
+		roots = append(roots, root)
+	}
 	for n := 1; n <= len(roots); n++ {
 		count := requestSchedules(n, func(steps []int) {
 			a := newApp()

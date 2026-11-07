@@ -79,6 +79,7 @@ func TestLocalURLsStayWithinAuthorizedArea(t *testing.T) {
 
 func TestRootedOpenRejectsSymlinkSwapAfterResolution(t *testing.T) {
 	root, outside := t.TempDir(), t.TempDir()
+	root, _ = Canonical(root) // Contains compares resolved paths
 	path := filepath.Join(root, "image.png")
 	os.WriteFile(path, []byte("inside"), 0600)
 	target := filepath.Join(outside, "private.png")

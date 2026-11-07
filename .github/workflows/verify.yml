@@ -53,6 +53,13 @@ jobs:
       - name: go test -race (includes internal/guardrails)
         run: go test -race ./...
 
+      # macOS's temp folder is behind the /var symlink; reproduce that here so
+      # path containment keeps comparing resolved paths.
+      - name: go test with TMPDIR behind a symlink
+        run: |
+          mkdir -p "$RUNNER_TEMP/real" && ln -s "$RUNNER_TEMP/real" "$RUNNER_TEMP/link"
+          TMPDIR="$RUNNER_TEMP/link" go test -count=1 ./...
+
       - name: mygo vet
         run: go tool mygo vet
 

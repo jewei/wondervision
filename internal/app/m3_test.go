@@ -65,9 +65,10 @@ func TestPaletteRunsToggleSidebarWithKeyboardAndEscapeCloses(t *testing.T) {
 	t.Cleanup(a.cancel)
 	tt := ui.NewTester(a.view, 1040, 720)
 	tt.Key(ui.Cmd|ui.Shift, ui.KeyP)
-	tt.Frame() // the virtualized list lays out its rows on the next frame
-	if a.overlay.kind != paletteOverlay || !tt.HasText("Quick Open") || !tt.HasText("Ctrl+P") {
-		t.Fatalf("Ctrl+Shift+P did not open the palette: kind=%d", a.overlay.kind)
+	tt.Frame()                                        // the virtualized list lays out its rows on the next frame
+	quickOpenKey := shortcut{ui.Cmd, ui.KeyP}.label() // Ctrl+P, or ⌘P on macOS
+	if a.overlay.kind != paletteOverlay || !tt.HasText("Quick Open") || !tt.HasText(quickOpenKey) {
+		t.Fatalf("Ctrl+Shift+P did not open the palette with Quick Open's shortcut %q: kind=%d texts=%q", quickOpenKey, a.overlay.kind, tt.Texts())
 	}
 	tt.Type("toggle side")
 	tt.Key(0, ui.KeyEnter)

@@ -140,3 +140,37 @@ heap and `/proc/<pid>/smaps` for the mappings:
 - Steady state is within target (88 MiB). Chunked, virtualized preview of long
   documents is a candidate for v0.2; it would have to keep cross-block
   selection, heading anchors and footnotes working.
+
+## 5.5-hour idle soak (CI)
+
+Run on 2026-11-07 by `scripts/soak.py` in the `verify` workflow's soak job
+([run 42360298725](https://github.com/jewei/wondervision/actions/runs/42360298725)),
+production binary from `a4ba7f13`, the §9 reference workload with `.env`,
+`main.go` and `report.md` (in Preview) open, untouched, sampled every
+5 minutes. Raw summary: `docs/verification/soak-ci.json`.
+
+**Leak verdict: PASS** (complete, 5.5 h, 67 samples, first hour excluded as
+settling).
+
+| Measure | Result | Criterion |
+| --- | --- | --- |
+| RSS, settled baseline → final | 155.5 → 155.6 MiB (growth 0.0 MiB) | sustained growth ≤ 20 MiB |
+| RSS trend after settling | +0.002 MiB/h | ≤ 0.5 MiB/h |
+| RSS at start; maximum | 184.8 MiB; 184.8 MiB (at start) | recorded |
+| Threads | 14 → 14 | no growth |
+| File descriptors (watches included) | 20 → 20 | no growth |
+| CPU | 0.009% of one core | recorded |
+| Internet sockets | 0 | zero network |
+
+**Spec §9 memory target (≤ 150 MiB): MISSED** on this runner: 184.8 MiB at
+start, 155.5 MiB settled. Not a leak (flat for 4.5 hours), but over the
+budget. The likely cause is the one in "Where Preview memory goes": a first
+launch on a fresh Xvfb display keeps Mesa's software OpenGL (`libLLVM`,
+`libgallium`, about 44 MiB) mapped, and this run had three tabs open. The
+per-mapping breakdown is in the run's artifact, which was not inspected here,
+so that attribution is not confirmed for this run.
+
+Limits: a GitHub-hosted runner with Xvfb and software rendering, not a
+desktop with a GPU; 5.5 hours, not the spec's 24. The 24-hour run and a
+memory measurement on a real desktop are still to do:
+`python3 scripts/soak.py run --out build/verification/soak-24h --hours 24`.

@@ -1,0 +1,41 @@
+{
+  "source": "a4ba7f13a42ee20c1590d1bbc9f3ff5aee17910a",
+  "started": "2026-11-07T09:35:18Z",
+  "status": "complete",
+  "verdict": "PASS",
+  "hours": 5.5,
+  "samples": 67,
+  "settle_hours": 1.0,
+  "rss_mib": {
+    "start": 184.8,
+    "baseline": 155.5,
+    "final": 155.6,
+    "max": 184.8,
+    "growth": 0.0,
+    "trend_per_hour": 0.002
+  },
+  "threads": [
+    14,
+    14
+  ],
+  "fds": [
+    20,
+    20
+  ],
+  "cpu_percent_one_core": 0.009,
+  "internet_sockets_max": 0,
+  "checks": {
+    "still running": true,
+    "sustained RSS growth ≤ 20 MiB": true,
+    "RSS trend ≤ 0.5 MiB/h after settling (judged from 2 h)": true,
+    "threads do not grow": true,
+    "file descriptors do not grow": true,
+    "zero internet sockets": true
+  },
+  "exited": null,
+  "tabs": [
+    ".env",
+    "main.go",
+    "report.md"
+  ]
+}

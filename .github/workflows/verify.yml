@@ -1,9 +1,32 @@
 name: verify
 
+# Linux checks run on a pull request and again when it merges. macOS tests and
+# the other-OS builds run on a push to the default branch, on a manual run, and
+# on a pull request that changes platform-specific code. A manual run can also
+# measure performance or soak. Markdown, docs, and the agent skills do not
+# start a run. Push is limited to the default branch, so one feature-branch
+# push does not start a second run beside the pull request.
+
 on:
   pull_request:
+    paths-ignore:
+      - '**/*.md'
+      - 'docs/**'
+      - '.agents/**'
+      - '.claude/**'
+      - '.gitignore'
+      - 'LICENSE'
   push:
-    branches: [work]
+    # `work` is the default branch. `main` is unused; listing it keeps the
+    # post-merge run if the default branch is renamed.
+    branches: [work, main]
+    paths-ignore:
+      - '**/*.md'
+      - 'docs/**'
+      - '.agents/**'
+      - '.claude/**'
+      - '.gitignore'
+      - 'LICENSE'
   workflow_dispatch:
     inputs:
       performance:
@@ -30,7 +53,7 @@ concurrency:
 jobs:
   checks:
     name: Go checks and headless verifiers
-    runs-on: ubuntu-24.04
+    runs-on: ubuntu-latest
     timeout-minutes: 20
     steps:
       - uses: actions/checkout@v7
@@ -38,6 +61,7 @@ jobs:
       - uses: actions/setup-go@v7
         with:
           go-version-file: go.mod
+          cache: true
 
       - uses: actions/setup-java@v6
         with:
@@ -100,36 +124,78 @@ jobs:
           path: build/verification/
           if-no-files-found: ignore
 
+  # Decides whether a pull request pays for macOS and the other-OS builds.
+  # Push and manual runs skip this job and run those builds anyway.
+  platforms:
+    name: Platform paths
+    if: github.event_name == 'pull_request'
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    outputs:
+      run: ${{ steps.set.outputs.run }}
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          fetch-depth: 0
+
+      - id: set
+        env:
+          BASE: ${{ github.event.pull_request.base.sha }}
+        run: |
+          pattern='_(darwin|windows|arm64|amd64|unix|other|linux)\.go$|^(go\.mod|go\.sum|mygo\.json)$|^cmd/|^internal/workspace/rename|^internal/documents/recovery_lock|^\.github/workflows/'
+          if ! changed=$(git diff --name-only --no-renames "$BASE" "$GITHUB_SHA"); then
+            echo "Could not diff; running the platform jobs."
+            echo "run=true" >> "$GITHUB_OUTPUT"
+            exit 0
+          fi
+          echo "$changed"
+          if [ -n "$changed" ] && echo "$changed" | grep -qE "$pattern"; then
+            echo "run=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "run=false" >> "$GITHUB_OUTPUT"
+          fi
+
   cross:
     name: Build and vet for macOS, Windows and Linux arm64
-    runs-on: ubuntu-24.04
+    needs: platforms
+    # A skipped path-filter job (push or manual) must not block this one.
+    # If the filter itself fails, still build: a fetch error is not a reason
+    # to skip the other operating systems.
+    if: ${{ !cancelled() && (github.event_name != 'pull_request' || needs.platforms.result != 'success' || needs.platforms.outputs.run == 'true') }}
+    runs-on: ubuntu-latest
     timeout-minutes: 15
-    strategy:
-      fail-fast: false
-      matrix:
-        target: [darwin/amd64, darwin/arm64, windows/amd64, windows/arm64, linux/arm64]
     steps:
       - uses: actions/checkout@v7
 
       - uses: actions/setup-go@v7
         with:
           go-version-file: go.mod
+          cache: true
 
       # Compile-only: these platforms are not run or tested here. go vet also
-      # type-checks the test files for the target.
-      - name: Build and vet ${{ matrix.target }}
+      # type-checks the test files for the target. One job, so checkout and
+      # the Go toolchain are not started five times.
+      - name: Build and vet other targets
         env:
           CGO_ENABLED: '0'
-          TARGET: ${{ matrix.target }}
         run: |
-          export GOOS=${TARGET%/*} GOARCH=${TARGET#*/}
-          go build -tags mygo_noinspector -trimpath -o /dev/null ./cmd/wondervision
-          go build -tags e2e -o /dev/null ./cmd/wondervision
-          go vet ./...
-        shell: bash
+          set -uo pipefail
+          fail=0
+          for target in darwin/amd64 darwin/arm64 windows/amd64 windows/arm64 linux/arm64; do
+            GOOS=${target%/*}
+            GOARCH=${target#*/}
+            export GOOS GOARCH
+            echo "=== $target ==="
+            go build -tags mygo_noinspector -trimpath -o /dev/null ./cmd/wondervision || fail=1
+            go build -tags e2e -o /dev/null ./cmd/wondervision || fail=1
+            go vet ./... || fail=1
+          done
+          exit "$fail"
 
   macos:
     name: Go tests on macOS
+    needs: platforms
+    if: ${{ !cancelled() && (github.event_name != 'pull_request' || needs.platforms.result != 'success' || needs.platforms.outputs.run == 'true') }}
     runs-on: macos-15
     timeout-minutes: 20
     steps:
@@ -138,6 +204,7 @@ jobs:
       - uses: actions/setup-go@v7
         with:
           go-version-file: go.mod
+          cache: true
 
       # Headless (ui.Tester); the native window is checked by hand on a Mac.
       - name: go vet and go test -race
@@ -147,7 +214,7 @@ jobs:
 
   native:
     name: Native GUI verifiers
-    runs-on: ubuntu-24.04
+    runs-on: ubuntu-latest
     timeout-minutes: 20
     steps:
       - uses: actions/checkout@v7
@@ -155,6 +222,7 @@ jobs:
       - uses: actions/setup-go@v7
         with:
           go-version-file: go.mod
+          cache: true
 
       - name: Install GTK and a headless desktop
         run: |
@@ -169,6 +237,7 @@ jobs:
       # do not behave as on a desktop and the quit-guard checks time out.
       - name: verify_native.py
         run: |
+          # shellcheck disable=SC2016 # the inner bash expands $wm, $rc, and the env vars
           xvfb-run -a -s '-screen 0 1440x900x24' dbus-run-session -- bash -c '
             openbox >/dev/null 2>&1 & wm=$!
             for i in $(seq 50); do xprop -root _NET_SUPPORTING_WM_CHECK 2>/dev/null | grep -q window && break; sleep 0.1; done
@@ -177,6 +246,7 @@ jobs:
 
       - name: verify_editing.py
         run: |
+          # shellcheck disable=SC2016 # the inner bash expands $wm, $rc, and the env vars
           xvfb-run -a -s '-screen 0 1440x900x24' dbus-run-session -- bash -c '
             openbox >/dev/null 2>&1 & wm=$!
             for i in $(seq 50); do xprop -root _NET_SUPPORTING_WM_CHECK 2>/dev/null | grep -q window && break; sleep 0.1; done
@@ -185,6 +255,7 @@ jobs:
 
       - name: verify_m3.py
         run: |
+          # shellcheck disable=SC2016 # the inner bash expands $wm, $rc, and the env vars
           xvfb-run -a -s '-screen 0 1440x900x24' dbus-run-session -- bash -c '
             openbox >/dev/null 2>&1 & wm=$!
             for i in $(seq 50); do xprop -root _NET_SUPPORTING_WM_CHECK 2>/dev/null | grep -q window && break; sleep 0.1; done
@@ -202,7 +273,7 @@ jobs:
   performance:
     name: Performance (spec §9)
     if: github.event_name == 'workflow_dispatch' && inputs.performance
-    runs-on: ubuntu-24.04
+    runs-on: ubuntu-latest
     timeout-minutes: 60
     steps:
       - uses: actions/checkout@v7
@@ -210,6 +281,7 @@ jobs:
       - uses: actions/setup-go@v7
         with:
           go-version-file: go.mod
+          cache: true
 
       - name: Install GTK and a headless desktop
         run: |
@@ -226,6 +298,7 @@ jobs:
         env:
           IDLE_SECONDS: ${{ inputs.idle_seconds }}
         run: |
+          # shellcheck disable=SC2016 # the inner bash expands $wm, $rc, and the env vars
           xvfb-run -a -s '-screen 0 1440x900x24' dbus-run-session -- bash -c '
             openbox >/dev/null 2>&1 & wm=$!
             for i in $(seq 50); do xprop -root _NET_SUPPORTING_WM_CHECK 2>/dev/null | grep -q window && break; sleep 0.1; done
@@ -244,7 +317,7 @@ jobs:
   soak:
     name: Idle soak (spec §9)
     if: github.event_name == 'workflow_dispatch' && inputs.soak_hours != '0'
-    runs-on: ubuntu-24.04
+    runs-on: ubuntu-latest
     timeout-minutes: 350
     steps:
       - uses: actions/checkout@v7
@@ -252,6 +325,7 @@ jobs:
       - uses: actions/setup-go@v7
         with:
           go-version-file: go.mod
+          cache: true
 
       - name: Install GTK and a headless desktop
         run: |
@@ -266,6 +340,7 @@ jobs:
         env:
           SOAK_HOURS: ${{ inputs.soak_hours }}
         run: |
+          # shellcheck disable=SC2016 # the inner bash expands $wm, $rc, and the env vars
           xvfb-run -a -s '-screen 0 1440x900x24' dbus-run-session -- bash -c '
             openbox >/dev/null 2>&1 & wm=$!
             for i in $(seq 50); do xprop -root _NET_SUPPORTING_WM_CHECK 2>/dev/null | grep -q window && break; sleep 0.1; done

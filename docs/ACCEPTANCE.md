@@ -5,8 +5,10 @@ cover it. "Go" tests run in `go test -race ./...`; "GUI" verifiers drive the
 real e2e binary through AT-SPI and X11 under Xvfb (`scripts/verify_*.py`);
 "guardrail" tests in `internal/guardrails` fail the build on a forbidden code
 shape; "TLC" models live in `verification/`. All of these run in CI
-(`.github/workflows/verify.yml`) on every pull request, except the performance
-and soak jobs, which run on demand.
+(`.github/workflows/verify.yml`) on a pull request that changes code, except
+the performance and soak jobs, which run on demand. A docs-only change does
+not start a run. macOS tests and the other-OS builds run on a push to `work`,
+on a manual run, and on a pull request that changes platform-specific code.
 
 Status: **met** = covered by a check that runs and passes; **partial** = covered,
 with a stated limit; **open** = not yet done.

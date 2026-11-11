@@ -141,8 +141,11 @@ latency on 1,000 and 10,000 files and typing in the 100 KiB file. Results are
 in `PERFORMANCE.md`; CI runs it on demand (`workflow_dispatch` with `performance` ticked).
 
 Project-local verification skills live in `.agents/skills/` (linked from
-`.claude/skills/` for Claude Code). CI runs the checks above on every pull
-request (`.github/workflows/verify.yml`). See
+`.claude/skills/` for Claude Code). CI (`.github/workflows/verify.yml`) runs
+the Linux checks on a pull request that changes code, and again when it merges
+to `work`. The macOS tests and the other-OS builds run on that merge, on a
+manual run, and on a pull request that changes platform-specific code. A
+docs-only change does not start a run. See
 [the M2 workflow](docs/M2-WORKFLOW.md), [M2 evidence](docs/verification/M2.md),
 [observed performance](PERFORMANCE.md), and
 [the spec §13 checklist traced to its evidence](docs/ACCEPTANCE.md). Bounded request-order tests cover
